@@ -224,7 +224,7 @@ otp.config_defaults = {
         title:   'Greetings!',
         html:    '<p class="splash-screen">'
                  + 'This is a test deployment of Open Trip Planner, containing data for ' +
-                 'the Philadelphia, New Jersey, and New York City areas.</p>'
+                 'the Philadelphia, New Jersey, and New York City, and Delaware areas.</p>'
     },
 
     systemMap : {
