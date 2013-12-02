@@ -32,6 +32,10 @@
     <module>opentripplanner-web-utils</module>
     <module>opentripplanner-analyst</module>
     <module>opentripplanner-analyst-client</module>
+    <module>opentripplanner-leaflet-client</module>
+    <module>opentripplanner-municoder</module>
+    <module>otp-standalone</module>
+    <module>otp-rest-api</module>
   </modules>
 
   <build>
@@ -261,19 +265,8 @@
     <repository>
       <id>opengeo</id>
       <name>OpenGeo Maven Repository</name>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
       <url>http://repo.opengeo.org/</url>
     </repository>
-<!--         <repository> -->
-<!--             <id>osgeo-snapshots</id> -->
-<!--             <name>OSGeo snapshots repository</name> -->
-<!--             <snapshots> -->
-<!--                 <enabled>true</enabled> -->
-<!--             </snapshots> -->
-<!--             <url>http://download.osgeo.org/</url> -->
-<!--         </repository> -->
   </repositories>
 
   <!-- define no dependencies in the top-level POM to minimize artifact size -->
@@ -423,31 +416,24 @@
         <version>1.9.1</version>
       </dependency>
       <!-- LOGGING -->
-        <dependency>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-          <version>${slf4j.version}</version>
-        </dependency>
-        <dependency>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-          <version>${slf4j.version}</version>
-        </dependency>
-        <dependency>
-          <groupId>org.slf4j</groupId>
-          <artifactId>log4j-over-slf4j</artifactId>
-          <version>${slf4j.version}</version>
-        </dependency>
-        <dependency>
-          <groupId>org.slf4j</groupId>
-          <artifactId>jcl-over-slf4j</artifactId>
-          <version>${slf4j.version}</version>
-        </dependency>
-        <dependency>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-          <version>1.1.1</version>
-        </dependency>
+      <dependency>
+        <!-- Logback is an implemetation of the SLF4J API (basically a new and improved log4j) -->
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.0.13</version>
+      </dependency>
+      <dependency>
+        <!-- Jersey uses java.util logging, redirect it via slf4j API to Logback -->
+        <groupId>org.slf4j</groupId>
+        <artifactId>jul-to-slf4j</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <!-- Spring uses jakarta commons logging. Redirect that via the SLF4J API to Logback -->
+        <groupId>org.slf4j</groupId>
+        <artifactId>jcl-over-slf4j</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
       <!-- Extensions to the Java standard library -->
       <dependency>
         <!-- Lombok provides annotation-driven field accessor methods -->
@@ -488,7 +474,7 @@
   </dependencyManagement>
 
   <properties>
-    <geotools.version>8.0-M4</geotools.version>
+    <geotools.version>9.2</geotools.version>
     <slf4j.version>1.7.5</slf4j.version>
     <jersey.version>1.17.1</jersey.version>
     <spring.version>3.0.5.RELEASE</spring.version>

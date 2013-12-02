@@ -93,7 +93,7 @@ public class StreetVertexIndexServiceImpl implements StreetVertexIndexService {
     // This distance is a euclidean distance in lat/lng space.
     private static final double MAX_CORNER_DISTANCE = 0.0001;
 
-    static final Logger _log = LoggerFactory.getLogger(StreetVertexIndexServiceImpl.class);
+    static final Logger LOG = LoggerFactory.getLogger(StreetVertexIndexServiceImpl.class);
 
     public StreetVertexIndexServiceImpl(Graph graph) {
         this.graph = graph;
@@ -184,48 +184,64 @@ public class StreetVertexIndexServiceImpl implements StreetVertexIndexService {
      */
     protected Vertex getClosestVertex(final GenericLocation location, RoutingRequest options,
             List<Edge> extraEdges) {
-        _log.debug("Looking for/making a vertex near {}", location);
+        LOG.debug("Looking for/making a vertex near {}", location);
 
         // first, check for intersections very close by
         Coordinate coord = location.getCoordinate();
         StreetVertex intersection = getIntersectionAt(coord, MAX_CORNER_DISTANCE);
         String calculatedName = location.getName();
-
         if (intersection != null) {
-            // coordinate is at a street corner or endpoint
-            if (!location.hasName()) {
-                _log.debug("found intersection {}. not splitting.", intersection);
-                // generate names for corners when no name was given
-                Set<String> uniqueNameSet = new HashSet<String>();
-                for (Edge e : intersection.getOutgoing()) {
-                    if (e instanceof StreetEdge) {
-                        uniqueNameSet.add(e.getName());
+            // We have an intersection vertex. Check that this vertex has edges we can traverse.
+            boolean canEscape = false; 
+            if (options == null) {
+                canEscape = true; // Some tests do not supply options.
+            } else {
+                TraversalRequirements reqs = new TraversalRequirements(options);
+                for (StreetEdge e : IterableLibrary.filter ( options.arriveBy ? 
+                        intersection.getIncoming() : intersection.getOutgoing(),
+                        StreetEdge.class)) {
+                    if (reqs.canBeTraversed(e)) {
+                        canEscape = true;
+                        break;
                     }
                 }
-                List<String> uniqueNames = new ArrayList<String>(uniqueNameSet);
-                Locale locale;
-                if (options == null) {
-                    locale = new Locale("en");
-                } else {
-                    locale = options.getLocale();
+            }       
+            if (canEscape) { 
+                // Coordinate is at an intersection or street endpoint, and has traversible edges.
+                if (!location.hasName()) {
+                    LOG.debug("found intersection {}. not splitting.", intersection);
+                    // generate names for corners when no name was given
+                    Set<String> uniqueNameSet = new HashSet<String>();
+                    for (Edge e : intersection.getOutgoing()) {
+                        if (e instanceof StreetEdge) {
+                            uniqueNameSet.add(e.getName());
+                        }
+                    }
+                    List<String> uniqueNames = new ArrayList<String>(uniqueNameSet);
+                    Locale locale;
+                    if (options == null) {
+                        locale = new Locale("en");
+                    } else {
+                        locale = options.getLocale();
+                    }
+                    ResourceBundle resources = ResourceBundle.getBundle("internals", locale);
+                    String fmt = resources.getString("corner");
+                    if (uniqueNames.size() > 1) {
+                        calculatedName = String.format(fmt, uniqueNames.get(0), uniqueNames.get(1));
+                    } else if (uniqueNames.size() == 1) {
+                        calculatedName = uniqueNames.get(0);
+                    } else {
+                        calculatedName = resources.getString("unnamedStreet");
+                    }
                 }
-                ResourceBundle resources = ResourceBundle.getBundle("internals", locale);
-                String fmt = resources.getString("corner");
-                if (uniqueNames.size() > 1) {
-                    calculatedName = String.format(fmt, uniqueNames.get(0), uniqueNames.get(1));
-                } else if (uniqueNames.size() == 1) {
-                    calculatedName = uniqueNames.get(0);
-                } else {
-                    calculatedName = resources.getString("unnamedStreet");
-                }
+                StreetLocation closest = new StreetLocation(graph, "corner " + Math.random(), coord,
+                        calculatedName);
+                FreeEdge e = new FreeEdge(closest, intersection);
+                closest.getExtra().add(e);
+                e = new FreeEdge(intersection, closest);
+                closest.getExtra().add(e);
+                return closest;
             }
-            StreetLocation closest = new StreetLocation(graph, "corner " + Math.random(), coord,
-                    calculatedName);
-            FreeEdge e = new FreeEdge(closest, intersection);
-            closest.getExtra().add(e);
-            e = new FreeEdge(intersection, closest);
-            closest.getExtra().add(e);
-            return closest;
         }
 
         // if no intersection vertices were found, then find the closest transit stop
@@ -243,7 +259,7 @@ public class StreetVertexIndexServiceImpl implements StreetVertexIndexService {
                 }
             }
         }
-        _log.debug(" best stop: {} distance: {}", closestStop, closestStopDistance);
+        LOG.debug(" best stop: {} distance: {}", closestStop, closestStopDistance);
 
         // then find closest walkable street
         StreetLocation closestStreet = null;
@@ -254,7 +270,7 @@ public class StreetVertexIndexServiceImpl implements StreetVertexIndexService {
             StreetEdge bestStreet = candidate.edge;
             Coordinate nearestPoint = candidate.nearestPointOnEdge;
             closestStreetDistance = distanceLibrary.distance(coord, nearestPoint);
-            _log.debug("best street: {} dist: {}", bestStreet.toString(), closestStreetDistance);
+            LOG.debug("best street: {} dist: {}", bestStreet.toString(), closestStreetDistance);
             if (calculatedName == null || "".equals(calculatedName)) {
                 calculatedName = bestStreet.getName();
             }
@@ -266,7 +282,7 @@ public class StreetVertexIndexServiceImpl implements StreetVertexIndexService {
         // decide whether to return street, or street + stop
         if (closestStreet == null) {
             // no street found, return closest stop or null
-            _log.debug("returning only transit stop (no street found)");
+            LOG.debug("returning only transit stop (no street found)");
             return closestStop; // which will be null if none was found
         } else {
             // street found
@@ -274,11 +290,11 @@ public class StreetVertexIndexServiceImpl implements StreetVertexIndexService {
                 // both street and stop found
                 double relativeStopDistance = closestStopDistance / closestStreetDistance;
                 if (relativeStopDistance < 1.5) {
-                    _log.debug("linking transit stop to street (distances are comparable)");
+                    LOG.debug("linking transit stop to street (distances are comparable)");
                     closestStreet.addExtraEdgeTo(closestStop);
                 }
             }
-            _log.debug("returning split street");
+            LOG.debug("returning split street");
             return closestStreet;
         }
     }
