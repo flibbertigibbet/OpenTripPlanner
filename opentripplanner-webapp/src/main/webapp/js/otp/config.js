@@ -107,11 +107,11 @@ otp.config_defaults = {
 
         geocoder  :
         {
-            enabled : false,
-            url     : "/geocoder/geocode",  
+            enabled : true,
+            url     : "/opentripplanner-geocoder/geocode",  
             addressParamName : "address"
         },
-        fromToOverride : new Ext.Template('<div class="mapHelp">' + otp.config.locale.config.rightClickMsg + '</div>')
+        //fromToOverride : new Ext.Template('<div class="mapHelp">' + otp.config.locale.config.rightClickMsg + '</div>')
     },
 
     map : {
@@ -223,7 +223,7 @@ otp.config_defaults = {
         html:    '<p class="splash-screen">'
                  + 'This is a test deployment of Open Trip Planner, ' +
 		'containing transit data for the Philadelphia, New Jersey, ' +
-		'and New York City areas.</p>'
+		'Delaware, and New York City areas.</p>'
 	},
 
     systemMap : {
