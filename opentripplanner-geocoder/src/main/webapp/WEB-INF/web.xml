@@ -15,8 +15,9 @@
  </listener>
  <!-- comment -->
  <servlet>
-  <servlet-name>Jersey</servlet-name>
+  <servlet-name>Jersey Geocoder</servlet-name>
   <servlet-class>com.sun.jersey.spi.spring.container.servlet.SpringServlet</servlet-class>
+  <!--<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class> -->
   <init-param>
    <param-name>com.sun.jersey.config.property.packages</param-name>
    <param-value>org.opentripplanner</param-value>
@@ -24,7 +25,7 @@
   <load-on-startup>1</load-on-startup>
  </servlet>
  <servlet-mapping>
-  <servlet-name>Jersey</servlet-name>
+  <servlet-name>Jersey Geocoder</servlet-name>
   <url-pattern>/*</url-pattern>
  </servlet-mapping>
  <session-config>
