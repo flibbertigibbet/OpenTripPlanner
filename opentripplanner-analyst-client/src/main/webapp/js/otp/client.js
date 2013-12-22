@@ -71,6 +71,7 @@ var buildQuery = function(params) {
 var analystUrl = "/opentripplanner-api-webapp/ws/tile/{z}/{x}/{y}.png"; 
 var analystLayer = new L.TileLayer(analystUrl, {attribution: osmAttrib});
 
+/*
 // create geoJSON layers for DC Purple Line
 
 var purpleLineCoords = [
@@ -139,6 +140,7 @@ var purpleLineAlignmentFeature = {
 };
 var purpleLineAlignmentLayer = new L.GeoJSON(purpleLineAlignmentFeature);
 map.addLayer(purpleLineAlignmentLayer);
+*/
 
 var baseMaps = {
     "OSM": osmLayer,
