@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 */
 
-var INIT_LOCATION = new L.LatLng(38.9538, -76.8851); // new carrolton
+var INIT_LOCATION = new L.LatLng(39.947121,-75.161018); // Phily
 var AUTO_CENTER_MAP = true;
 var ROUTER_ID = "";
 var MSEC_PER_HOUR = 60 * 60 * 1000;
@@ -23,8 +23,8 @@ var BASE_DATE_MSEC = new Date().getTime() - new Date().getTime() % MSEC_PER_DAY;
 
 
 var map = new L.Map('map', {
-	minZoom : 10,
-	maxZoom : 17,
+	minZoom : 9,
+	maxZoom : 20,
 	// what we really need is a fade transition between old and new tiles without removing the old ones
 });
 
