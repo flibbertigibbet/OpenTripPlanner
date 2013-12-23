@@ -268,9 +268,9 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
 
         // Automobiles have variable speeds depending on the edge type
         double speed = calculateSpeed(options, traverseMode);
-        
         double time = length / speed;
         double weight;
+
         // TODO(flamholz): factor out this bike, wheelchair and walking specific logic to somewhere central.
         if (options.wheelchairAccessible) {
             weight = elevationProfileSegment.getSlopeSpeedEffectiveLength() / speed;
@@ -288,7 +288,7 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
                 }
                 break;
             case FLAT:
-                /* see notes in StreetVertex on speed overhead */
+                // see notes in StreetVertex on speed overhead
                 weight = length / speed + elevationProfileSegment.getSlopeWorkCost();
                 break;
             case QUICK:
@@ -312,22 +312,6 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
                 time = elevationProfileSegment.getSlopeSpeedEffectiveLength() / speed;
             }
             weight = time;
-            if (traverseMode.equals(TraverseMode.WALK)) {
-                // take slopes into account when walking
-                double costs = ElevationUtils.getWalkCostsForSlope(length, elevationProfileSegment.getMaxSlope());
-                // as the cost walkspeed is assumed to be for 4.8km/h (= 1.333 m/sec) we need to adjust
-                // for the walkspeed set by the user
-                double elevationUtilsSpeed = 4.0 / 3.0;
-                weight = costs * (elevationUtilsSpeed / speed);
-                time = weight; //treat cost as time, as in the current model it actually is the same (this can be checked for maxSlope == 0)
-                /*
-                // debug code
-                if(weight > 100){
-                    double timeflat = length / speed;
-                    System.out.format("line length: %.1f m, slope: %.3f ---> slope costs: %.1f , weight: %.1f , time (flat):  %.1f %n", length, elevationProfileSegment.getMaxSlope(), costs, weight, timeflat);
-                }
-                */
-            }
         }
         if (isStairs()) {
             weight *= options.stairsReluctance;
@@ -342,7 +326,18 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
         if (wheelchairNotes != null && options.wheelchairAccessible) {
             s1.addAlerts(wheelchairNotes);
         }
-
+        /* Compute turn cost.
+         * 
+         * This is a subtle piece of code. Turn costs are evaluated differently during
+         * forward and reverse traversal. During forward traversal of an edge, the turn
+         * *into* that edge is used, while during reverse traversal, the turn *out of*
+         * the edge is used.
+         *
+         * However, over a set of edges, the turn costs must add up the same (for
+         * general correctness and specifically for reverse optimization). This means
+         * that during reverse traversal, we must also use the speed for the mode of
+         * the backEdge, rather than of the current edge.
+         */
         PlainStreetEdge backPSE;
         if (backEdge != null && backEdge instanceof PlainStreetEdge) {
             backPSE = (PlainStreetEdge) backEdge;
@@ -350,18 +345,6 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
             double backSpeed = backPSE.calculateSpeed(backOptions, backMode);
             final double realTurnCost;  // Units are seconds.
             
-            /* Compute turn cost.
-             * 
-             * This is a subtle piece of code. Turn costs are evaluated differently during
-             * forward and reverse traversal. During forward traversal of an edge, the turn
-             * *into* that edge is used, while during reverse traversal, the turn *out of*
-             * the edge is used.
-             *
-             * However, over a set of edges, the turn costs must add up the same (for
-             * general correctness and specifically for reverse optimization). This means
-             * that during reverse traversal, we must also use the speed for the mode of
-             * the backEdge, rather than of the current edge.
-             */
             if (options.arriveBy && tov instanceof IntersectionVertex) { // arrive-by search
                 if (!canTurnOnto(backPSE, s0, backMode)) {
                     return null;
@@ -387,7 +370,6 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
             if (!traverseMode.isDriving()) {
                 s1.incrementWalkDistance(realTurnCost / 100);  // just a tie-breaker
             }
-
             long turnTime = (long) Math.ceil(realTurnCost);
             time += turnTime;
             weight += options.turnReluctance * realTurnCost;
