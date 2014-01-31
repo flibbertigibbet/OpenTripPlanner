@@ -63,8 +63,8 @@ otp.config = {
      * Site name / description / branding display options
      */
 
-    siteName            : "My OTP Instance",
-    siteDescription     : "An OpenTripPlanner deployment.",
+    siteName            : "OTP NorthEast",
+    siteDescription     : "An OpenTripPlanner deployment for Philly, NJ, NYC, and DE.",
     logoGraphic         : 'images/otp_logo_darkbg_40px.png',
     // bikeshareName    : "",
 
@@ -112,6 +112,12 @@ otp.config = {
      */
 
     geocoders : [
+    	{
+	  name: 'geocoder',
+	  className: 'otp.core.Geocoder',
+	  url: '/otp-geocoder/geocode',
+	  addressParam: 'address'
+	}
     ],
 
     
@@ -134,7 +140,7 @@ otp.config = {
         },
         {
             title: 'Contact',
-            content: '<p>Comments? Contact us at...</p>'
+            content: '<p>Comments? Contact us at codeforphilly.org.</p>'
         },           
     ],
     
