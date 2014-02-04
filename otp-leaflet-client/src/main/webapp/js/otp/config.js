@@ -12,7 +12,6 @@ otp.config = {
      */
     hostname : "http://philly-opentrips.jarv.us:8080",
     restService: "otp-rest-servlet",
-    routerId: '',
     //municoderHostname : "http://localhost:8080",
     //datastoreUrl : 'http://localhost:9000',
 
@@ -53,10 +52,10 @@ otp.config = {
      * properties, when set, override that behavioir.
      */
      
-    // initLatLng : new L.LatLng(<lat>, <lng>),
-    // initZoom : 14,
-    // minZoom : 10,
-    // maxZoom : 20,
+    initLatLng : new L.LatLng(40.75469970331247, -73.95956167883573),
+    initZoom : 14,
+    minZoom : 1,
+    maxZoom : 20,
     
     /* Whether the map should be moved to contain the full itinerary when a result is received. */
     zoomToFitResults    : false,
