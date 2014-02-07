@@ -52,8 +52,8 @@ otp.config = {
      * properties, when set, override that behavioir.
      */
      
-    initLatLng : new L.LatLng(40.75469970331247, -73.95956167883573),
-    initZoom : 14,
+    initLatLng : new L.LatLng(39.952648,-75.164007),
+    initZoom : 10,
     minZoom : 1,
     maxZoom : 20,
     
@@ -136,12 +136,12 @@ otp.config = {
     infoWidgets: [
         {
             title: 'About',
-            content: '<p>About this site</p>',
+            content: '<p>This site can plan trips using public transit, bicycling, or walking in Philadelphia, New Jersey, New York City, and Delaware.  This site is under development; use at your own risk.</p><p>It uses data for the transit agencies:  SEPTA, NJ TRANSIT, PATCO, PATH, MTA (New York City), and Delaware First State.</p>',
             //cssClass: 'otp-contactWidget',
         },
         {
             title: 'Contact',
-            content: '<p>Comments? Contact us at codeforphilly.org.</p>'
+            content: '<p>Comments? Contact us at codeforphilly.org, or visit our <a href="http://codeforphilly.org/projects/otp">project page</a>.</p>'
         },           
     ],
     
