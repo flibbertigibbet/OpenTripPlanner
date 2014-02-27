@@ -66,15 +66,8 @@ public class PreAlightEdge extends FreeEdge implements StationEdge {
             if (!options.getModes().isTransit())
                 return null;
 
-            // Do not board if passenger has alighted from a local stop
-            if (s0.isAlightedLocal()) {
-                return null;
-            }
             TransitStop toVertex = (TransitStop) getToVertex();
-            // Do not board once one has alighted from a local stop
-            if (toVertex.isLocal() && s0.isEverBoarded()) {
-                return null;
-            }
+
             // If we've hit our transfer limit, don't go any further
             if (s0.getNumBoardings() > options.maxTransfers)
                 return null;
@@ -102,7 +95,6 @@ public class PreAlightEdge extends FreeEdge implements StationEdge {
 
             StateEditor s1 = s0.edit(this);
             s1.setTimeSeconds(alight_before);
-            s1.setEverBoarded(true);
             long wait_cost = t0 - alight_before;
             s1.incrementWeight(wait_cost + transfer_penalty);
             s1.setBackMode(getMode());
@@ -111,9 +103,6 @@ public class PreAlightEdge extends FreeEdge implements StationEdge {
             /* Forward traversal: not so much to do */
             StateEditor s1 = s0.edit(this);
             TransitStop toVertex = (TransitStop) getToVertex();
-            if (toVertex.isLocal()) {
-                s1.setAlightedLocal(true);
-            }
             s1.alightTransit();
             s1.incrementTimeInSeconds(options.getAlightSlack());
             s1.setBackMode(getMode());
