@@ -75,17 +75,24 @@ public class StreetTransitLink extends Edge {
     }
 
     public State traverse(State s0) {
+        RoutingRequest req = s0.getOptions();
         if (s0.getOptions().wheelchairAccessible && !wheelchairAccessible) {
             return null;
         }
-        if (s0.getNonTransitMode() == TraverseMode.CAR) {
-            // Forbid enter station in CAR mode
-            return null;
-        }
-        // Do not check here whether transit modes are selected. A check for the presence of 
+        // Do not check here whether any transit modes are selected. A check for the presence of
         // transit modes will instead be done in the following PreBoard edge.
-        // This allows finding transit stops with walk-only options.
+        // This allows searching for nearby transit stops using walk-only options.
         StateEditor s1 = s0.edit(this);
+
+        /* Only enter stations in CAR mode if parking is not required (kiss and ride) */
+        /* Note that in arriveBy searches this is double-traversing link edges to fork the state into both WALK and CAR mode. This is an insane hack. */
+        if (s0.getNonTransitMode() == TraverseMode.CAR) {
+            if (req.kissAndRide && !s0.isCarParked()) {
+                s1.setCarParked(true);
+            } else {
+                return null;
+            }
+        }
         s1.incrementTimeInSeconds(transitStop.getStreetToStopTime() + 1);
         s1.incrementWeight(STL_TRAVERSE_COST + transitStop.getStreetToStopTime());
         s1.setBackMode(TraverseMode.LEG_SWITCH);

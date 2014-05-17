@@ -30,6 +30,7 @@ import lombok.Setter;
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.model.Trip;
+import org.opentripplanner.api.parameter.QualifiedModeSetSequence;
 import org.opentripplanner.common.MavenVersion;
 import org.opentripplanner.common.model.GenericLocation;
 import org.opentripplanner.common.model.NamedPlace;
@@ -211,7 +212,7 @@ public class RoutingRequest implements Cloneable, Serializable {
     public double waitAtBeginningFactor = 0.2;
 
     /** This prevents unnecessary transfers by adding a cost for boarding a vehicle. */
-    protected int walkBoardCost = 60 * 5;
+    protected int walkBoardCost = 60 * 10;
 
     /** Separate cost for boarding a vehicle with a bicycle, which is more difficult than on foot. */
     protected int bikeBoardCost = 60 * 10;
@@ -367,10 +368,18 @@ public class RoutingRequest implements Cloneable, Serializable {
 
 	private double heuristicWeight = 1.0;
 	
-	private boolean softWalkLimiting = false;
+	private boolean softWalkLimiting = true;
 	
-	private double softWalkPenalty = 60.0; // a jump in cost when stepping over the walking limit
-	private double softWalkOverageRate = 5.0; // a jump in cost for every meter over the walking limit
+	private double softWalkPenalty = 0.0; // a jump in cost when stepping over the walking limit
+	private double softWalkOverageRate = 2.0; // a jump in cost for every meter over the walking limit
+
+    /* Additional flags affecting mode transitions. This is a temporary solution, as it only covers parking and rental at the beginning of the trip. */
+    public boolean allowBikeRental = false;
+    public boolean bikeParkAndRide = false;
+    public boolean parkAndRide  = false;
+    public boolean kissAndRide  = false;
+    /** Weight multiplier for pre-transit travel when using drive-to-transit (park and ride or kiss and ride). */
+    public double firstLegReluctance = 5;
 
     /* CONSTRUCTORS */
 
@@ -380,7 +389,7 @@ public class RoutingRequest implements Cloneable, Serializable {
         walkSpeed = 1.33; // 1.33 m/s ~ 3mph, avg. human speed
         bikeSpeed = 5; // 5 m/s, ~11 mph, a random bicycling speed
         carSpeed = 15; // 15 m/s, ~35 mph, a random driving speed
-        setModes(new TraverseModeSet(new TraverseMode[] { TraverseMode.WALK, TraverseMode.TRANSIT }));
+        setModes(new TraverseModeSet(TraverseMode.WALK, TraverseMode.TRANSIT));
         bikeWalkingOptions = this;
 
         // So that they are never null.
@@ -391,6 +400,16 @@ public class RoutingRequest implements Cloneable, Serializable {
     public RoutingRequest(TraverseModeSet modes) {
         this();
         this.setModes(modes);
+    }
+
+    public RoutingRequest(QualifiedModeSetSequence qmodes) {
+        this();
+        qmodes.applyToRequest(this);
+    }
+
+    public RoutingRequest(String qmodes) {
+        this();
+        new QualifiedModeSetSequence(qmodes).applyToRequest(this);
     }
 
     public RoutingRequest(TraverseMode mode) {

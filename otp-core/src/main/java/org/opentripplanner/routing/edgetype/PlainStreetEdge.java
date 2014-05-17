@@ -234,10 +234,43 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
     @Override
     public State traverse(State s0) {
         final RoutingRequest options = s0.getOptions();
-        return doTraverse(s0, options, s0.getNonTransitMode());
+        final TraverseMode currMode = s0.getNonTransitMode();
+        StateEditor editor = doTraverse(s0, options, s0.getNonTransitMode());
+        State state = (editor == null) ? null : editor.makeState();
+        /* Kiss and ride support. Mode transitions occur without the explicit loop edges used in park-and-ride. */
+        if (options.kissAndRide) {
+            if (options.arriveBy) {
+                // Branch search to "unparked" CAR mode ASAP after transit has been used.
+                // Final WALK check prevents infinite recursion.
+                if (s0.isCarParked() && s0.isEverBoarded() && currMode == TraverseMode.WALK) {
+                    editor = doTraverse(s0, options, TraverseMode.CAR);
+                    if (editor != null) {
+                        editor.setCarParked(false); // Also has the effect of switching to CAR
+                        State forkState = editor.makeState();
+                        if (forkState != null) {
+                            forkState.addToExistingResultChain(state);
+                            return forkState; // return both parked and unparked states
+                        }
+                    }
+                }
+            } else { /* departAfter */
+                // Irrevocable transition from driving to walking. "Parking" means being dropped off in this case.
+                // Final CAR check needed to prevent infinite recursion.
+                if ( ! s0.isCarParked() && ! permission.allows(TraverseMode.CAR) && currMode == TraverseMode.CAR) {
+                    editor = doTraverse(s0, options, TraverseMode.WALK);
+                    if (editor != null) {
+                        editor.setCarParked(true); // has the effect of switching to WALK and preventing further car use
+                        return editor.makeState(); // return only the "parked" walking state
+                    }
+
+                }
+            }
+        }
+        return state;
     }
 
-    private State doTraverse(State s0, RoutingRequest options, TraverseMode traverseMode) {
+    /** return a StateEditor rather than a State so that we can make parking/mode switch modifications for kiss-and-ride. */
+    private StateEditor doTraverse(State s0, RoutingRequest options, TraverseMode traverseMode) {
         boolean walkingBike = options.isWalkingBike();
         boolean backWalkingBike = s0.isBackWalkingBike();
         TraverseMode backMode = s0.getBackMode();
@@ -257,11 +290,10 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
         backWalkingBike &= TraverseMode.WALK.equals(backMode);
         walkingBike &= TraverseMode.WALK.equals(traverseMode);
 
+        /* Check whether this street allows the current mode. If not and we are biking, attempt to walk the bike. */
         if (!canTraverse(options, traverseMode)) {
             if (traverseMode == TraverseMode.BICYCLE) {
-                // try walking bike since you can't ride here
-                return doTraverse(s0, options.getBikeWalkingOptions(),
-                        TraverseMode.WALK);
+                return doTraverse(s0, options.getBikeWalkingOptions(), TraverseMode.WALK);
             }
             return null;
         }
@@ -330,12 +362,14 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
                 */
             }
         }
+
         if (isStairs()) {
             weight *= options.stairsReluctance;
         } else {
+            // TODO: this is being applied even when biking or driving.
             weight *= options.walkReluctance;
         }
-        
+
         StateEditor s1 = s0.edit(this);
         s1.setBackMode(traverseMode);
         s1.setBackWalkingBike(walkingBike);
@@ -344,6 +378,7 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
             s1.addAlerts(wheelchairNotes);
         }
 
+        /* Compute turn cost. */
         PlainStreetEdge backPSE;
         if (backEdge != null && backEdge instanceof PlainStreetEdge) {
             backPSE = (PlainStreetEdge) backEdge;
@@ -351,8 +386,7 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
             double backSpeed = backPSE.calculateSpeed(backOptions, backMode);
             final double realTurnCost;  // Units are seconds.
             
-            /* Compute turn cost.
-             * 
+            /*
              * This is a subtle piece of code. Turn costs are evaluated differently during
              * forward and reverse traversal. During forward traversal of an edge, the turn
              * *into* that edge is used, while during reverse traversal, the turn *out of*
@@ -397,8 +431,17 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
         if (!traverseMode.isDriving()) {
             s1.incrementWalkDistance(length);
         }
+
+        /* On the pre-kiss/pre-park leg, make both walking and driving bad relative to transit. */
+        if (options.kissAndRide || options.parkAndRide) {
+            if (options.arriveBy) {
+                if ( ! s0.isCarParked()) weight *= options.firstLegReluctance;
+            } else {
+                if ( ! s0.isEverBoarded()) weight *= options.firstLegReluctance;
+            }
+        }
         
-        // apply strategy for avoiding walking too far, either soft or hard.
+        /* Apply a strategy for avoiding walking too far, either soft (weight increases) or hard limiting (pruning). */
         if (s1.weHaveWalkedTooFar(options)) {
         	
         	// if we're using a soft walk-limit
@@ -435,7 +478,7 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
             s1.addAlert(Alert.createSimpleAlerts("Toll road"));
         }
         
-        return s1.makeState();
+        return s1;
     }
 
     /**
