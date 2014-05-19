@@ -11,7 +11,7 @@ otp.config = {
      * The OTP web service locations
      */
     hostname : "http://philly-opentrips.jarv.us:8080",
-    restService: "otp-rest-servlet",
+    //restService: "otp-rest-servlet",
     //municoderHostname : "http://localhost:8080",
     //datastoreUrl : 'http://localhost:9000',
     // In the 0.10.x API the base path is "otp-rest-servlet/ws"
