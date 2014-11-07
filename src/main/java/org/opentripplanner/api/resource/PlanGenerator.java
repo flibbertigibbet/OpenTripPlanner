@@ -28,6 +28,7 @@ import org.opentripplanner.api.model.WalkStep;
 import org.opentripplanner.common.geometry.DirectionUtils;
 import org.opentripplanner.common.geometry.GeometryUtils;
 import org.opentripplanner.common.geometry.PackedCoordinateSequence;
+import org.opentripplanner.common.model.GenericLocation;
 import org.opentripplanner.common.model.P2;
 import org.opentripplanner.common.model.extras.NumericFieldSet;
 import org.opentripplanner.common.model.extras.OptionAttribute;
@@ -49,9 +50,12 @@ import org.opentripplanner.routing.edgetype.AreaEdge;
 import org.opentripplanner.routing.edgetype.StreetEdge;
 import org.opentripplanner.routing.edgetype.ElevatorAlightEdge;
 import org.opentripplanner.routing.edgetype.FreeEdge;
+import org.opentripplanner.routing.edgetype.LegSwitchingEdge;
 import org.opentripplanner.routing.edgetype.OnboardEdge;
+import org.opentripplanner.routing.edgetype.PathwayEdge;
 import org.opentripplanner.routing.edgetype.PatternEdge;
 import org.opentripplanner.routing.edgetype.PatternInterlineDwell;
+import org.opentripplanner.routing.edgetype.StreetEdge;
 import org.opentripplanner.routing.edgetype.TripPattern;
 import org.opentripplanner.routing.error.PathNotFoundException;
 import org.opentripplanner.routing.error.TrivialPathException;
@@ -71,6 +75,7 @@ import org.opentripplanner.util.PolylineEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.LineString;
@@ -96,7 +101,7 @@ public class PlanGenerator {
         // TODO: this seems to only check the endpoints, which are usually auto-generated
         //if ( ! options.isAccessible())
         //    throw new LocationNotAccessible();
-
+        
         // Copy options to keep originals
         RoutingRequest originalOptions = options.clone();
 
@@ -154,6 +159,64 @@ public class PlanGenerator {
         }
         options.rctx.debugOutput.finishedRendering();
         return plan;
+    }
+
+    /**
+     * Break up a RoutingRequest with intermediate places into separate requests, in the given order
+     */
+    private List<GraphPath> getPaths(RoutingRequest request) {
+        if (request.hasIntermediatePlaces()) {
+            long time = request.dateTime;
+            GenericLocation from = request.from;
+            List<GenericLocation> places = Lists.newLinkedList(request.intermediatePlaces);
+            places.add(request.to);
+            request.clearIntermediatePlaces();
+            List<GraphPath> paths = new ArrayList<>();
+
+            for (GenericLocation to : places) {
+                request.dateTime = time;
+                request.from = from;
+                request.to = to;
+                request.rctx = null;
+                request.setRoutingContext(graph);
+
+                List<GraphPath> partialPaths = pathService.getPaths(request);
+                if (partialPaths == null || partialPaths.size() == 0) {
+                    return null;
+                }
+
+                GraphPath path = partialPaths.get(0);
+                paths.add(path);
+                from = to;
+                time = path.getEndTime();
+            }
+
+            return Arrays.asList(joinPaths(paths));
+        } else {
+            return pathService.getPaths(request);
+        }
+    }
+
+    private GraphPath joinPaths(List<GraphPath> paths) {
+        State lastState = paths.get(0).states.getLast();
+        GraphPath newPath = new GraphPath(lastState, false);
+        Vertex lastVertex = lastState.getVertex();
+        for (GraphPath path : paths.subList(1, paths.size())) {
+            lastState = newPath.states.getLast();
+            // add a leg-switching state
+            LegSwitchingEdge legSwitchingEdge = new LegSwitchingEdge(lastVertex, lastVertex);
+            lastState = legSwitchingEdge.traverse(lastState);
+            newPath.edges.add(legSwitchingEdge);
+            newPath.states.add(lastState);
+            // add the next subpath
+            for (Edge e : path.edges) {
+                lastState = e.traverse(lastState);
+                newPath.edges.add(e);
+                newPath.states.add(lastState);
+            }
+            lastVertex = path.getEndVertex();
+        }
+        return newPath;
     }
 
     /**
@@ -266,7 +329,7 @@ public class PlanGenerator {
 
     private Calendar makeCalendar(State state) {
         RoutingContext rctx = state.getContext();
-        TimeZone timeZone = rctx.graph.getTimeZone();
+        TimeZone timeZone = rctx.graph.getTimeZone(); 
         Calendar calendar = Calendar.getInstance(timeZone);
         calendar.setTimeInMillis(state.getTimeInMillis());
         return calendar;
@@ -366,10 +429,8 @@ public class PlanGenerator {
 
         Edge[] edges = new Edge[states.length - 1];
 
-        State lastState = states[states.length - 1];
-
         leg.startTime = makeCalendar(states[0]);
-        leg.endTime = makeCalendar(lastState);
+        leg.endTime = makeCalendar(states[states.length - 1]);
 
         // Calculate leg distance and fill array of edges
         leg.distance = 0.0;
@@ -401,7 +462,7 @@ public class PlanGenerator {
 
         addFrequencyFields(states, leg);
 
-        leg.rentedBike = states[0].isBikeRenting() && lastState.isBikeRenting();
+        leg.rentedBike = states[0].isBikeRenting() && states[states.length - 1].isBikeRenting();
 
         return leg;
     }
@@ -527,7 +588,7 @@ public class PlanGenerator {
     }
 
     /**
-     * Calculate the walkTime, transitTime, feature counts, and waitingTime of an {@link Itinerary}.
+     * Calculate the walkTime, transitTime and waitingTime of an {@link Itinerary}.
      *
      * @param itinerary The itinerary to calculate the times for
      * @param states The states that go with the itinerary

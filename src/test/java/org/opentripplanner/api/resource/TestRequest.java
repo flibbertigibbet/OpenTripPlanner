@@ -13,12 +13,20 @@
 
 package org.opentripplanner.api.resource;
 
-import com.google.transit.realtime.GtfsRealtime.TripDescriptor;
-import com.google.transit.realtime.GtfsRealtime.TripUpdate;
-import com.google.transit.realtime.GtfsRealtime.TripUpdate.StopTimeEvent;
-import com.google.transit.realtime.GtfsRealtime.TripUpdate.StopTimeUpdate;
-import com.google.transit.realtime.GtfsRealtime.TripUpdate.StopTimeUpdate.ScheduleRelationship;
-import com.vividsolutions.jts.geom.LineString;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+import java.io.File;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.SimpleTimeZone;
+import java.util.TimeZone;
 
 import junit.framework.TestCase;
 
@@ -32,6 +40,7 @@ import org.opentripplanner.api.model.AbsoluteDirection;
 import org.opentripplanner.api.model.Itinerary;
 import org.opentripplanner.api.model.Leg;
 import org.opentripplanner.api.model.RelativeDirection;
+import org.opentripplanner.api.model.TripPlan;
 import org.opentripplanner.api.model.WalkStep;
 import org.opentripplanner.api.model.alertpatch.AlertPatchResponse;
 import org.opentripplanner.api.parameter.QualifiedModeSetSequence;
@@ -65,33 +74,26 @@ import org.opentripplanner.routing.edgetype.TripPattern;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
 import org.opentripplanner.routing.impl.DefaultStreetVertexIndexFactory;
-import org.opentripplanner.routing.impl.GraphServiceImpl;
 import org.opentripplanner.routing.impl.MemoryGraphSource;
 import org.opentripplanner.routing.impl.TravelingSalesmanPathService;
 import org.opentripplanner.routing.services.AlertPatchService;
+import org.opentripplanner.routing.services.GraphService;
 import org.opentripplanner.routing.spt.GraphPath;
 import org.opentripplanner.routing.vertextype.IntersectionVertex;
 import org.opentripplanner.routing.vertextype.StreetVertex;
 import org.opentripplanner.routing.vertextype.TransitStationStop;
 import org.opentripplanner.standalone.CommandLineParameters;
+import org.opentripplanner.standalone.OTPConfigurator;
 import org.opentripplanner.standalone.OTPServer;
+import org.opentripplanner.standalone.Router;
 import org.opentripplanner.updater.stoptime.TimetableSnapshotSource;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.SimpleTimeZone;
-import java.util.TimeZone;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import com.google.transit.realtime.GtfsRealtime.TripDescriptor;
+import com.google.transit.realtime.GtfsRealtime.TripUpdate;
+import com.google.transit.realtime.GtfsRealtime.TripUpdate.StopTimeEvent;
+import com.google.transit.realtime.GtfsRealtime.TripUpdate.StopTimeUpdate;
+import com.google.transit.realtime.GtfsRealtime.TripUpdate.StopTimeUpdate.ScheduleRelationship;
+import com.vividsolutions.jts.geom.LineString;
 
 /* This is a hack to hold context and graph data between test runs, since loading it is slow. */
 class Context {
@@ -102,11 +104,11 @@ class Context {
 
     public Graph graph = spy(new Graph());
 
-    public GraphServiceImpl graphService = new GraphServiceImpl();
-
     public CommandLineParameters commandLineParameters = new CommandLineParameters();
 
-    public OTPServer otpServer = new OTPServer(commandLineParameters, graphService);
+    public OTPConfigurator otpConfigurator = new OTPConfigurator(commandLineParameters);
+
+    public OTPServer otpServer = otpConfigurator.getServer();
 
     private static Context instance = null;
 
@@ -118,6 +120,7 @@ class Context {
     }
 
     public Context() {
+        GraphService graphService = otpServer.getGraphService();
         graphService.registerGraph("", new MemoryGraphSource("", makeSimpleGraph())); // default graph is tiny test graph
         graphService.registerGraph("portland", new MemoryGraphSource("portland", graph));
         ShapefileStreetGraphBuilderImpl builder = new ShapefileStreetGraphBuilderImpl();
@@ -295,7 +298,6 @@ public class TestRequest extends TestCase {
         Vertex v3 = getVertexByCrossStreets("NE 21ST AVE", "NE MASON ST").getOutgoing().iterator()
                 .next().getToVertex();
         Vertex v4 = getVertexByCrossStreets("SE 92ND AVE", "SE FLAVEL ST");
-        Vertex[] vertices = { v1, v3, v2, v4 };
         assertNotNull(v1);
         assertNotNull(v2);
         assertNotNull(v3);
@@ -303,17 +305,30 @@ public class TestRequest extends TestCase {
 
         TestPlanner planner = new TestPlanner("portland", v1.getLabel(), v4.getLabel(),
                 Arrays.asList(v2.getLabel(), v3.getLabel()));
-        List<GraphPath> paths = planner.getPaths();
+        TripPlan plan = planner.getItineraries().getPlan();
+        Itinerary itinerary = plan.itinerary.get(0);
+        assertTrue(itinerary.legs.size() == 3);
+        Leg legs[] = itinerary.legs.toArray(new Leg[3]);
 
-        assertTrue(paths.size() > 0);
-        GraphPath path = paths.get(0);
-        int curVertex = 0;
-        for (State s : path.states) {
-            if (s.getVertex().equals(vertices[curVertex])) {
-                curVertex += 1;
-            }
-        }
-        assertEquals(4, curVertex); // found all four, in the correct order (1, 3, 2, 4)
+        assertEquals(v1.getLat(), plan.from.lat);
+        assertEquals(v1.getLon(), plan.from.lon);
+        assertEquals(v1.getLat(), legs[0].from.lat);
+        assertEquals(v1.getLon(), legs[0].from.lon);
+
+        assertEquals(v2.getLon(), legs[0].to.lon);
+        assertEquals(v2.getLat(), legs[0].to.lat);
+        assertEquals(v2.getLat(), legs[1].from.lat);
+        assertEquals(v2.getLon(), legs[1].from.lon);
+
+        assertEquals(v3.getLon(), legs[1].to.lon);
+        assertEquals(v3.getLat(), legs[1].to.lat);
+        assertEquals(v3.getLat(), legs[2].from.lat);
+        assertEquals(v3.getLon(), legs[2].from.lon);
+
+        assertEquals(v4.getLon(), legs[2].to.lon);
+        assertEquals(v4.getLat(), legs[2].to.lat);
+        assertEquals(v4.getLon(), plan.to.lon);
+        assertEquals(v4.getLat(), plan.to.lat);
     }
 
     private Vertex getVertexByCrossStreets(String s1, String s2) {
@@ -327,7 +342,7 @@ public class TestRequest extends TestCase {
 
     public void testBikeRental() {
         BikeRental bikeRental = new BikeRental();
-        bikeRental.server = Context.getInstance().otpServer;
+        bikeRental.otpServer = Context.getInstance().otpServer;
         // no stations in graph
         BikeRentalStationList stations = bikeRental.getBikeRentalStations(null, null, null);
         assertEquals(0, stations.stations.size());
@@ -862,8 +877,6 @@ public class TestRequest extends TestCase {
      * from HTTP Query string.
      */
     private static class TestPlanner extends Planner {
-        private TravelingSalesmanPathService tsp;
-
         public TestPlanner(String routerId, String v1, String v2) {
             super();
             this.fromPlace = Arrays.asList(v1);
@@ -890,7 +903,6 @@ public class TestRequest extends TestCase {
             this(routerId, v1, v2);
             this.modes = Arrays.asList(new QualifiedModeSetSequence("WALK"));
             this.intermediatePlaces = intermediates;
-            tsp = new TravelingSalesmanPathService(otpServer.graphService, otpServer.pathService);
         }
 
         public void setBannedTrips(List<String> bannedTrips) {
@@ -919,17 +931,6 @@ public class TestRequest extends TestCase {
 
         public RoutingRequest buildRequest() throws ParameterException {
             return super.buildRequest();
-        }
-
-        public List<GraphPath> getPaths() {
-            try {
-                RoutingRequest options = this.buildRequest();
-                options.intermediatePlacesOrdered = false;
-                return tsp.getPaths(options);
-            } catch (ParameterException e) {
-                e.printStackTrace();
-                return null;
-            }
         }
 
         public Response getItineraries() {

@@ -13,45 +13,15 @@
 
 package org.opentripplanner.routing.location;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import com.google.common.collect.Iterables;
-
-import org.opentripplanner.common.TurnRestriction;
-import org.opentripplanner.common.geometry.DistanceLibrary;
-import org.opentripplanner.common.geometry.GeometryUtils;
-import org.opentripplanner.common.geometry.PackedCoordinateSequence;
-import org.opentripplanner.common.geometry.SphericalDistanceLibrary;
-import org.opentripplanner.common.model.P2;
-import org.opentripplanner.routing.core.RoutingContext;
-import org.opentripplanner.routing.core.TraverseModeSet;
-import org.opentripplanner.routing.edgetype.AreaEdge;
-import org.opentripplanner.routing.edgetype.FreeEdge;
-import org.opentripplanner.routing.edgetype.PartialStreetEdge;
-import org.opentripplanner.routing.edgetype.StreetEdge;
-import org.opentripplanner.routing.edgetype.StreetWithElevationEdge;
-import org.opentripplanner.routing.graph.Edge;
-import org.opentripplanner.routing.graph.Graph;
-import org.opentripplanner.routing.graph.Vertex;
-import org.opentripplanner.routing.impl.CandidateEdge;
-import org.opentripplanner.routing.util.ElevationUtils;
-import org.opentripplanner.routing.vertextype.StreetVertex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.LineString;
+import org.opentripplanner.routing.vertextype.StreetVertex;
 
 /**
  * Represents a location on a street, somewhere between the two corners. This is used when computing the first and last segments of a trip, for trips
  * that start or end between two intersections. Also for situating bus stops in the middle of street segments.
  */
 public class StreetLocation extends StreetVertex {
+<<<<<<< HEAD
 
     private static final Logger LOG = LoggerFactory.getLogger(StreetLocation.class);
 
@@ -59,21 +29,19 @@ public class StreetLocation extends StreetVertex {
 
     private ArrayList<Edge> extra = new ArrayList<Edge>();
 
+=======
+>>>>>>> 98510d4... Rewrite temporary edge and vertex code
     private boolean wheelchairAccessible;
 
-    private ArrayList<StreetEdge> edges;
-
-    private Graph graph;
-
     // maybe name should just be pulled from street being split
-    public StreetLocation(Graph graph, String id, Coordinate nearestPoint, String name) {
+    public StreetLocation(String id, Coordinate nearestPoint, String name) {
         // calling constructor with null graph means this vertex is temporary
         super(null, id, nearestPoint.x, nearestPoint.y, name);
-        this.graph = graph;
     }
 
     private static final long serialVersionUID = 1L;
 
+<<<<<<< HEAD
     /**
      * Creates a StreetLocation on the given street (set of PlainStreetEdges). How far along is controlled by the location parameter, which represents
      * a distance along the edge between 0 (the from vertex) and 1 (the to vertex).
@@ -254,6 +222,8 @@ public class StreetLocation extends StreetVertex {
         return extra;
     }
 
+=======
+>>>>>>> 98510d4... Rewrite temporary edge and vertex code
     public void setWheelchairAccessible(boolean wheelchairAccessible) {
         this.wheelchairAccessible = wheelchairAccessible;
     }
@@ -274,6 +244,7 @@ public class StreetLocation extends StreetVertex {
     public int hashCode() {
         return getCoordinate().hashCode();
     }
+<<<<<<< HEAD
 
     public void addExtraEdgeTo(Vertex target) {
         extra.add(new FreeEdge(this, target));
@@ -317,4 +288,6 @@ public class StreetLocation extends StreetVertex {
         // better to fix this be completely redoing how temporary endpoint vertices are created.
     }
 
+=======
+>>>>>>> 98510d4... Rewrite temporary edge and vertex code
 }

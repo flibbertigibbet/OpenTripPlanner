@@ -15,7 +15,10 @@ package org.opentripplanner.routing.edgetype;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.opentripplanner.common.TurnRestriction;
 import org.opentripplanner.common.TurnRestrictionType;
@@ -31,6 +34,8 @@ import org.opentripplanner.routing.core.TraverseMode;
 import org.opentripplanner.routing.core.TraverseModeSet;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
+import org.opentripplanner.routing.util.ElevationUtils;
+import org.opentripplanner.routing.vertextype.IntersectionVertex;
 import org.opentripplanner.routing.vertextype.StreetVertex;
 import org.opentripplanner.util.BitSetUtils;
 import org.slf4j.Logger;
@@ -60,6 +65,8 @@ public class StreetEdge extends Edge implements Cloneable {
     public static final int ANY_PLATFORM_MASK = 24;
     public static final int CROSSING_CLASS_MASK = 7; // ignore platform
     public static final int CLASS_LINK = 32; // on/offramps; OSM calls them "links"
+
+    private static final double GREENWAY_SAFETY_FACTOR = 0.1;
 
     // TODO(flamholz): do something smarter with the car speed here.
     public static final float DEFAULT_CAR_SPEED = 11.2f;
@@ -381,21 +388,20 @@ public class StreetEdge extends Edge implements Cloneable {
     }
 
     public boolean canTurnOnto(Edge e, State state, TraverseMode mode) {
-        Graph graph = state.getOptions().rctx.graph;
-        for (TurnRestriction restriction : graph.getTurnRestrictions(this)) {
-            /* FIXME: This is wrong for trips that end in the middle of restriction.to
+        for (TurnRestriction turnRestriction : getTurnRestrictions(state.getOptions().rctx.graph)) {
+            /* FIXME: This is wrong for trips that end in the middle of turnRestriction.to
              */
 
-            // NOTE(flamholz): edge to be traversed decides equivalence. This is important since
+            // NOTE(flamholz): edge to be traversed decides equivalence. This is important since 
             // it might be a temporary edge that is equivalent to some graph edge.
-            if (restriction.type == TurnRestrictionType.ONLY_TURN) {
-                if (!e.isEquivalentTo(restriction.to) && restriction.modes.contains(mode) &&
-                        restriction.active(state.getTimeSeconds())) {
+            if (turnRestriction.type == TurnRestrictionType.ONLY_TURN) {
+                if (!e.isEquivalentTo(turnRestriction.to) && turnRestriction.modes.contains(mode) &&
+                        turnRestriction.active(state.getTimeSeconds())) {
                     return false;
                 }
             } else {
-                if (e.isEquivalentTo(restriction.to) && restriction.modes.contains(mode) &&
-                        restriction.active(state.getTimeSeconds())) {
+                if (e.isEquivalentTo(turnRestriction.to) && turnRestriction.modes.contains(mode) &&
+                        turnRestriction.active(state.getTimeSeconds())) {
                     return false;
                 }
             }
@@ -567,4 +573,7 @@ public class StreetEdge extends Edge implements Cloneable {
 		return this.outAngle * 180 / 128;
 	}
 
+    protected List<TurnRestriction> getTurnRestrictions(Graph graph) {
+        return graph.getTurnRestrictions(this);
+    }
 }
