@@ -32,6 +32,7 @@ import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
 import org.opentripplanner.routing.vertextype.BikeParkVertex;
+import org.opentripplanner.routing.vertextype.FeatureVertex;
 import org.opentripplanner.routing.vertextype.BikeRentalStationVertex;
 import org.opentripplanner.routing.vertextype.TransitStop;
 import org.slf4j.Logger;
@@ -136,6 +137,30 @@ public class NetworkLinker {
         for (BikeParkVertex bprv : Iterables.filter(vertices, BikeParkVertex.class)) {
             if (!networkLinkerLibrary.connectVertexToStreets(bprv).getResult()) {
                 LOG.warn(graph.addBuilderAnnotation(new BikeParkUnlinked(bprv)));
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////
+        LOG.debug("Linking features...");
+        for (FeatureVertex feature : Iterables.filter(vertices, FeatureVertex.class)) {
+
+            /*
+            boolean alreadyLinked = false;
+            for(Edge e : feature.getOutgoing()){
+                if(e instanceof StreetTransitLink) {
+                    alreadyLinked = true;
+                    break;
+                }
+            }
+            if(alreadyLinked) {
+                LOG.warn("Skipping already-linked feature {}: {}", feature.getFeatureType(), feature.getId());
+                continue;
+            }
+            */
+
+            if (!networkLinkerLibrary.connectVertexToStreets(feature).getResult()) {
+                LOG.warn("Could not connect a feature to the streets.  TODO: better message here");
+                //LOG.warn(graph.addBuilderAnnotation(new BikeParkUnlinked(bprv)));
             }
         }
     }

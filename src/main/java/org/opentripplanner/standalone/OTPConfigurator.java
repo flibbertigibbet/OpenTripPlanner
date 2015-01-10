@@ -55,17 +55,17 @@ import com.google.common.collect.Lists;
 public class OTPConfigurator {
 
     private static final Logger LOG = LoggerFactory.getLogger(OTPConfigurator.class);
-    
+
     private final CommandLineParameters params;
-    
+
     private GraphService graphService = null;
-    
+
     public OTPConfigurator (CommandLineParameters params) {
         this.params = params;
     }
 
     private OTPServer server;
-    
+
     /**
      * We could even do this at Configurator construct time (rather than lazy initializing), using
      * the inMemory param to create the right kind of GraphService ahead of time. However that
@@ -118,7 +118,7 @@ public class OTPConfigurator {
         }
         return graphService;
     }
-    
+
     public GraphBuilderTask builderFromParameters() {
         if (params.build == null || params.build.isEmpty()) {
             return null;
@@ -177,6 +177,7 @@ public class OTPConfigurator {
             osmBuilder.setDefaultWayPropertySetSource(defaultWayPropertySetSource);
             osmBuilder.skipVisibility = params.skipVisibility;
             graphBuilder.addGraphBuilder(osmBuilder);
+            graphBuilder.addGraphBuilder(new TransitToStreetNetworkGraphBuilderImpl());
             graphBuilder.addGraphBuilder(new PruneFloatingIslands());
         }
         if ( hasGTFS ) {
@@ -201,10 +202,9 @@ public class OTPConfigurator {
                         graphBuilder.addGraphBuilder(new StreetlessStopLinker());
                     }
                 }
-            } 
+            }
             if ( hasOSM ) {
                 graphBuilder.addGraphBuilder(new TransitToTaggedStopsGraphBuilderImpl());
-                graphBuilder.addGraphBuilder(new TransitToStreetNetworkGraphBuilderImpl());
                 // The stops can be linked to each other once they have links to the street network.
                 if (params.longDistance && params.useStreetsForLinking && !params.useTransfersTxt) {
                     graphBuilder.addGraphBuilder(new StreetfulStopLinker());
@@ -233,7 +233,7 @@ public class OTPConfigurator {
             return server;
         } else return null;
     }
-    
+
     public GraphVisualizer visualizerFromParameters() {
         if (params.visualize) {
             // FIXME get OTPServer into visualizer.
@@ -242,7 +242,7 @@ public class OTPConfigurator {
             return visualizer;
         } else return null;
     }
-    
+
     /**
      * Represents the different types of input files for a graph build.
      */

@@ -40,12 +40,12 @@ public class Leg {
      * The date and time this leg begins.
      */
     public Calendar startTime = null;
-    
+
     /**
      * The date and time this leg ends.
      */
     public Calendar endTime = null;
-    
+
     /**
      * For transit leg, the offset from the scheduled departure-time of the boarding stop in this leg.
      * "scheduled time of departure at boarding stop" = startTime - departureDelay
@@ -60,24 +60,24 @@ public class Leg {
      * Whether there is real-time data about this Leg
      */
     public Boolean realTime = false;
-    
+
     /**
      * Is this a frequency-based trip with non-strict departure times?
      */
     public Boolean isNonExactFrequency = null;
-    
+
     /**
-     * The best estimate of the time between two arriving vehicles. This is particularly important 
-     * for non-strict frequency trips, but could become important for real-time trips, strict 
+     * The best estimate of the time between two arriving vehicles. This is particularly important
+     * for non-strict frequency trips, but could become important for real-time trips, strict
      * frequency trips, and scheduled trips with empirical headways.
      */
     public Integer headway = null;
-    
+
     /**
      * The distance traveled while traversing the leg in meters.
      */
     public Double distance = null;
-    
+
     /**
      * Is this leg a traversing pathways?
      */
@@ -126,7 +126,7 @@ public class Leg {
     @XmlAttribute
     @JsonSerialize
     public Integer routeType = null;
-    
+
     /**
      * For transit legs, the ID of the route.
      * For non-transit legs, null.
@@ -149,7 +149,17 @@ public class Leg {
     @JsonSerialize
     public Boolean interlineWithPreviousLeg;
 
-    
+    /**
+     * Return counts of features passed.
+     */
+    @XmlAttribute
+    @JsonSerialize
+    public Integer benches = 0;
+
+    @XmlAttribute
+    @JsonSerialize
+    public Integer toilets = 0;
+
     /**
      * For transit leg, the trip's short name (if one exists). For non-transit legs, null.
      */
@@ -163,7 +173,7 @@ public class Leg {
     @XmlAttribute
     @JsonSerialize
     public String tripBlockId = null;
-    
+
     /**
      * For transit legs, the headsign of the bus or train being used. For non-transit legs, null.
      */
@@ -178,7 +188,7 @@ public class Leg {
     @XmlAttribute
     @JsonSerialize
     public String agencyId = null;
-    
+
     /**
      * For transit legs, the ID of the trip.
      * For non-transit legs, null.
@@ -186,7 +196,7 @@ public class Leg {
     @XmlAttribute
     @JsonSerialize
     public String tripId = null;
-    
+
     /**
      * For transit legs, the service date of the trip.
      * For non-transit legs, null.
@@ -194,12 +204,12 @@ public class Leg {
     @XmlAttribute
     @JsonSerialize
     public String serviceDate = null;
-    
+
     /**
      * The Place where the leg originates.
      */
     public Place from = null;
-    
+
     /**
      * The Place where the leg begins.
      */
@@ -220,7 +230,7 @@ public class Leg {
     public EncodedPolylineBean legGeometry;
 
     /**
-     * A series of turn by turn instructions used for walking, biking and driving. 
+     * A series of turn by turn instructions used for walking, biking and driving.
      */
     @XmlElementWrapper(name = "steps")
     @JsonProperty(value="steps")
@@ -270,8 +280,8 @@ public class Leg {
         else if (mode.equals(TraverseMode.CUSTOM_MOTOR_VEHICLE.toString())) return false;
         else return true;
     }
-    
-    /** 
+
+    /**
      * The leg's duration in seconds
      */
     @XmlElement

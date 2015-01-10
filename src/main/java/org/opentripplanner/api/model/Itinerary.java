@@ -60,7 +60,13 @@ public class Itinerary {
      * How far the user has to walk, in meters.
      */
     public Double walkDistance = 0.0;
-    
+
+    /**
+     * Counts of features passed.
+     */
+    public int benches = 0;
+    public int toilets = 0;
+
     /**
      * Indicates that the walk limit distance has been exceeded for this itinerary when true.
      */

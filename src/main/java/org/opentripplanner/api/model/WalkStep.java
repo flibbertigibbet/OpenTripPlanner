@@ -108,6 +108,12 @@ public class WalkStep {
     public double lat;
 
     /**
+     * Counts of features passed.
+     */
+    public int benches;
+    public int toilets;
+
+    /**
      * The elevation profile as a comma-separated list of x,y values. x is the distance from the start of the step, y is the elevation at this
      * distance.
      */
@@ -129,7 +135,14 @@ public class WalkStep {
         if (relativeDirection != null) {
             direction = relativeDirection.toString();
         }
-        return "WalkStep(" + direction + " on " + streetName + " for " + distance + ")";
+        String str = "WalkStep(" + direction + " on " + streetName + " for " + distance;
+        if (benches > 0) {
+            str += " benches=" + benches;
+        }
+        if (toilets > 0) {
+            str += " toilets=" + toilets;
+        }
+        return str += ")";
     }
 
     public static RelativeDirection getRelativeDirection(double lastAngle, double thisAngle,

@@ -25,21 +25,21 @@ import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.graph.Vertex;
 
 /**
- * A ShortestPathTree implementation that corresponds to a basic Dijkstra search for the earliest 
+ * A ShortestPathTree implementation that corresponds to a basic Dijkstra search for the earliest
  * arrival problem. A single optimal state is tracked per vertex: the one that minimizes
- * arrival time. Optimizing for arrival time eliminates the usual need to maintain Pareto-optimal 
+ * arrival time. Optimizing for arrival time eliminates the usual need to maintain Pareto-optimal
  * sets of states when working on a time-dependent graph.
- * 
- * This approach is more coherent in Analyst when we are extracting travel times from the optimal 
+ *
+ * This approach is more coherent in Analyst when we are extracting travel times from the optimal
  * paths. It should also lead to less branching and faster response times when building large
  * shortest path trees.
- * 
+ *
  * Note that for this SPT to work properly, the work queue should be ordered by time rather than weight.
- * 
+ *
  * @author andrewbyrd
  */
 public class EarliestArrivalShortestPathTree extends AbstractShortestPathTree {
-    
+
     private static final int DEFAULT_CAPACITY = 500;
 
     Map<Vertex, State> states;
@@ -55,7 +55,7 @@ public class EarliestArrivalShortestPathTree extends AbstractShortestPathTree {
     /**
      * Constructor with a parameter indicating the initial capacity of the data structures holding
      * vertices. This can help avoid resizing and rehashing these objects during path searches.
-     * 
+     *
      * @param n
      *            - the initial size of vertex-keyed maps
      */
@@ -76,7 +76,7 @@ public class EarliestArrivalShortestPathTree extends AbstractShortestPathTree {
     private boolean earlier (State s0, State s1) {
         return s0.getActiveTime() < s1.getActiveTime();
     }
-    
+
     @Override
     public boolean add(State state) {
         Vertex here = state.getVertex();

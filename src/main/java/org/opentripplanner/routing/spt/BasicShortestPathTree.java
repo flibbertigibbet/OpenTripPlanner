@@ -31,11 +31,11 @@ import org.opentripplanner.routing.graph.Vertex;
  * A ShortestPathTree implementation that corresponds to a basic Dijkstra search, where there is a
  * single optimal state per vertex. It maintains a closed vertex list since decrease-key operations
  * are not guaranteed to be supported by the priority queue.
- * 
+ *
  * @author andrewbyrd
  */
 public class BasicShortestPathTree extends AbstractShortestPathTree {
-    
+
     private static final int DEFAULT_CAPACITY = 500;
 
     Map<Vertex, State> states;
@@ -51,7 +51,7 @@ public class BasicShortestPathTree extends AbstractShortestPathTree {
     /**
      * Constructor with a parameter indicating the initial capacity of the data structures holding
      * vertices. This can help avoid resizing and rehashing these objects during path searches.
-     * 
+     *
      * @param n
      *            - the initial size of vertex-keyed maps
      */

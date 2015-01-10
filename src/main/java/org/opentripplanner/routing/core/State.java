@@ -36,12 +36,21 @@ import org.slf4j.LoggerFactory;
 
 public class State implements Cloneable {
     /* Data which is likely to change at most traversals */
-    
+
     // the current time at this state, in milliseconds
     protected long time;
 
     // accumulated weight up to this state
     public double weight;
+
+    //
+    // accumulated count of features up to this state, incremented in StreetEdge
+    public int benchCount;
+    public int toiletCount;
+
+    // save these request properties here as a convenience
+    private boolean preferBenches;
+    private boolean preferToilets;
 
     // associate this state with a vertex in the graph
     protected Vertex vertex;
@@ -67,14 +76,14 @@ public class State implements Cloneable {
 
     // track the states of all path parsers -- probably changes frequently
     protected int[] pathParserStates;
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(State.class);
 
     /* CONSTRUCTORS */
 
     /**
      * Create an initial state representing the beginning of a search for the given routing context.
-     * Initial "parent-less" states can only be created at the beginning of a trip. elsewhere, all 
+     * Initial "parent-less" states can only be created at the beginning of a trip. elsewhere, all
      * states must be created from a parent and associated with an edge.
      */
     public State(RoutingRequest opt) {
@@ -82,7 +91,7 @@ public class State implements Cloneable {
     }
 
     /**
-     * Create an initial state, forcing vertex to the specified value. Useful for reusing a 
+     * Create an initial state, forcing vertex to the specified value. Useful for reusing a
      * RoutingContext in TransitIndex, tests, etc.
      */
     public State(Vertex vertex, RoutingRequest opt) {
@@ -91,24 +100,29 @@ public class State implements Cloneable {
     }
 
     /**
-     * Create an initial state, forcing vertex and time to the specified values. Useful for reusing 
+     * Create an initial state, forcing vertex and time to the specified values. Useful for reusing
      * a RoutingContext in TransitIndex, tests, etc.
      */
     public State(Vertex vertex, long timeSeconds, RoutingRequest options) {
         // Since you explicitly specify, the vertex, we don't set the backEdge.
         this(vertex, null, timeSeconds, options);
     }
-    
+
     /**
-     * Create an initial state, forcing vertex, back edge and time to the specified values. Useful for reusing 
+     * Create an initial state, forcing vertex, back edge and time to the specified values. Useful for reusing
      * a RoutingContext in TransitIndex, tests, etc.
      */
     public State(Vertex vertex, Edge backEdge, long timeSeconds, RoutingRequest options) {
         this.weight = 0;
+        this.benchCount = 0;
+        this.toiletCount = 0;
         this.vertex = vertex;
         this.backEdge = backEdge;
         this.backState = null;
         this.stateData = new StateData(options);
+        this.preferBenches = options.preferBenches;
+        this.preferToilets = options.preferToilets;
+
         // note that here we are breaking the circular reference between rctx and options
         // this should be harmless since reversed clones are only used when routing has finished
         this.stateData.opt = options;
@@ -137,7 +151,7 @@ public class State implements Cloneable {
     /**
      * Create a state editor to produce a child of this state, which will be the result of
      * traversing the given edge.
-     * 
+     *
      * @param e
      * @return
      */
@@ -162,7 +176,7 @@ public class State implements Cloneable {
 
     /**
      * Retrieve a State extension based on its key.
-     * 
+     *
      * @param key - An Object that is a key in this State's extension map
      * @return - The extension value for the given key, or null if not present
      */
@@ -176,20 +190,30 @@ public class State implements Cloneable {
     public String toString() {
         return "<State " + new Date(getTimeInMillis()) + " [" + weight + "] "
                 + (isBikeRenting() ? "BIKE_RENT " : "") + (isCarParked() ? "CAR_PARKED " : "")
-                + vertex + ">";
+                + vertex + (hasBenches() ? " BENCHES" : "") + (hasToilets() ? " TOILETS" : "") + ">";
     }
-    
+
+    public Boolean hasBenches() {
+        return (benchCount > 0) ? true : false;
+    }
+
+    public Boolean hasToilets() {
+        return (toiletCount > 0) ? true : false;
+    }
+
     public String toStringVerbose() {
-        return "<State " + new Date(getTimeInMillis()) + 
-                " w=" + this.getWeight() + 
-                " t=" + this.getElapsedTimeSeconds() + 
-                " d=" + this.getWalkDistance() + 
+        return "<State " + new Date(getTimeInMillis()) +
+                " w=" + this.getWeight() +
+                " t=" + this.getElapsedTimeSeconds() +
+                " d=" + this.getWalkDistance() +
                 " p=" + this.getPreTransitTime() +
                 " b=" + this.getNumBoardings() +
                 " br=" + this.isBikeRenting() +
+                " benches=" + this.getBenches() +
+                " toilets=" + this.getToilets() +
                 " pr=" + this.isCarParked() + ">";
     }
-    
+
     /** Returns time in seconds since epoch */
     public long getTimeSeconds() {
         return time / 1000;
@@ -204,11 +228,11 @@ public class State implements Cloneable {
         return stateData.tripTimes;
     }
 
-    /** 
+    /**
      * Returns the length of the trip in seconds up to this time, not including the initial wait.
      * It subtracts out the initial wait, up to a clamp value specified in the request.
      * If the clamp value is set to -1, no clamping will occur.
-     * If the clamp value is set to 0, the initial wait time will not be subtracted out 
+     * If the clamp value is set to 0, the initial wait time will not be subtracted out
      * (i.e. it will be clamped to zero).
      * This is used in lieu of reverse optimization in Analyst.
      */
@@ -219,7 +243,7 @@ public class State implements Cloneable {
 
         // only subtract up the clamp value
         if (clampInitialWait >= 0 && initialWait > clampInitialWait)
-            initialWait = clampInitialWait;            
+            initialWait = clampInitialWait;
 
         long activeTime = getElapsedTimeSeconds() - initialWait;
 
@@ -229,7 +253,7 @@ public class State implements Cloneable {
             activeTime = getElapsedTimeSeconds();
         }
 
-        return activeTime;            
+        return activeTime;
     }
 
     public AgencyAndId getTripId() {
@@ -239,7 +263,7 @@ public class State implements Cloneable {
     public Trip getPreviousTrip() {
         return stateData.previousTrip;
     }
-    
+
     public String getZone() {
         return stateData.zone;
     }
@@ -264,7 +288,7 @@ public class State implements Cloneable {
     public boolean isBikeRenting() {
         return stateData.usingRentedBike;
     }
-    
+
     public boolean isCarParked() {
         return stateData.carParked;
     }
@@ -320,11 +344,33 @@ public class State implements Cloneable {
     }
 
     /**
-     * Returns true if this state's weight is lower than the other one. Considers only weight and
-     * not time or other criteria.
+     * Returns true if this state's weight is lower than the other one.
+     *  Also considers features.
      */
     public boolean betterThan(State other) {
-        return this.weight < other.weight;
+        // lower weights are better, so invert value
+        double thisPrefVal = -this.weight;
+        double thatPrefVal = -other.weight;
+
+        // weight ranges from 0 to 1, so presence of features should be more important than weight
+        if (preferBenches) {
+            thisPrefVal += this.getBenches();
+            thatPrefVal += other.getBenches();
+        }
+
+        if (preferToilets) {
+            thisPrefVal += this.getToilets();
+            thatPrefVal += other.getToilets();
+        }
+        return thisPrefVal > thatPrefVal;
+    }
+
+    public int getBenches() {
+        return this.benchCount;
+    }
+
+    public int getToilets() {
+        return this.toiletCount;
     }
 
     public double getWeight() {
@@ -371,11 +417,11 @@ public class State implements Cloneable {
     public State getBackState() {
         return this.backState;
     }
-    
+
     public TraverseMode getBackMode () {
         return stateData.backMode;
     }
-    
+
     public boolean isBackWalkingBike () {
         return stateData.backWalkingBike;
     }
@@ -385,7 +431,7 @@ public class State implements Cloneable {
      * while for other things it is what you would expect.
      */
     public String getBackDirection () {
-        // This can happen when stop_headsign says different things at two trips on the same 
+        // This can happen when stop_headsign says different things at two trips on the same
         // pattern and at the same stop.
         if (backEdge instanceof TablePatternEdge) {
             return stateData.tripTimes.getHeadsign(((TablePatternEdge)backEdge).getStopIndex());
@@ -394,7 +440,7 @@ public class State implements Cloneable {
             return backEdge.getDirection();
         }
     }
-    
+
     /**
      * Get the back trip of the given state. For time dependent transit, State will find the
      * right thing to do.
@@ -422,7 +468,7 @@ public class State implements Cloneable {
 
     /**
      * Optional next result that allows {@link Edge} to return multiple results.
-     * 
+     *
      * @return the next additional result from an edge traversal, or null if no more results
      */
     public State getNextResult() {
@@ -432,18 +478,18 @@ public class State implements Cloneable {
     /**
      * Extend an exiting result chain by appending this result to the existing chain. The usage
      * model looks like this:
-     * 
+     *
      * <code>
      * TraverseResult result = null;
-     * 
+     *
      * for( ... ) {
      *   TraverseResult individualResult = ...;
      *   result = individualResult.addToExistingResultChain(result);
      * }
-     * 
+     *
      * return result;
      * </code>
-     * 
+     *
      * @param existingResultChain the tail of an existing result chain, or null if the chain has not
      *        been started
      * @return
@@ -468,11 +514,11 @@ public class State implements Cloneable {
     public RoutingRequest getOptions () {
         return stateData.opt;
     }
-    
+
     /**
      * This method is on State rather than RoutingRequest because we care whether the user is in
      * possession of a rented bike.
-     * 
+     *
      * @return BICYCLE if routing with an owned bicycle, or if at this state the user is holding on
      *         to a rented bicycle.
      */
@@ -626,7 +672,7 @@ public class State implements Cloneable {
         }
         return foundAlternatePaths;
     }
-    
+
     public boolean allPathParsersAccept() {
         PathParser[] parsers = this.stateData.opt.rctx.pathParsers;
         for (int i = 0; i < parsers.length; i++) {
@@ -662,13 +708,13 @@ public class State implements Cloneable {
      * Reverse the path implicit in the given state, re-traversing all edges in the opposite
      * direction so as to remove any unnecessary waiting in the resulting itinerary. This produces a
      * path that passes through all the same edges, but which may have a shorter overall duration
-     * due to different weights on time-dependent (e.g. transit boarding) edges. If the optimize 
-     * parameter is false, the path will be reversed but will have the same duration. This is the 
+     * due to different weights on time-dependent (e.g. transit boarding) edges. If the optimize
+     * parameter is false, the path will be reversed but will have the same duration. This is the
      * result of combining the functions from GraphPath optimize and reverse.
-     * 
+     *
      * @param optimize Should this path be optimized or just reversed?
      * @param forward Is this an on-the-fly reverse search in the midst of a forward search?
-     * @returns a state at the other end (or this end, in the case of a forward search) 
+     * @returns a state at the other end (or this end, in the case of a forward search)
      * of a reversed, optimized path
      */
     public State optimizeOrReverse (boolean optimize, boolean forward) {
@@ -686,7 +732,7 @@ public class State implements Cloneable {
 
         while (orig.getBackState() != null) {
             edge = orig.getBackEdge();
-            
+
             if (optimize) {
                 // first board/last alight: figure in wait time in on the fly optimization
                 if (edge instanceof TransitBoardAlight &&
@@ -694,7 +740,7 @@ public class State implements Cloneable {
                         orig.getNumBoardings() == 1 &&
                         (
                                 // boarding in a forward main search
-                                (((TransitBoardAlight) edge).boarding &&                         
+                                (((TransitBoardAlight) edge).boarding &&
                                         !stateData.opt.arriveBy) ||
                                 // alighting in a reverse main search
                                 (!((TransitBoardAlight) edge).boarding &&
@@ -736,9 +782,11 @@ public class State implements Cloneable {
 
                 editor.incrementTimeInSeconds(orig.getAbsTimeDeltaSeconds());
                 editor.incrementWeight(orig.getWeightDelta());
+                editor.incrementBenchCount(this.getBenches() - backState.getBenches());
+                editor.incrementToiletCount(this.getToilets() - backState.getToilets());
                 editor.incrementWalkDistance(orig.getWalkDistanceDelta());
                 editor.incrementPreTransitTime(orig.getPreTransitTimeDelta());
-                
+
                 // propagate the modes through to the reversed edge
                 editor.setBackMode(orig.getBackMode());
 
@@ -757,10 +805,10 @@ public class State implements Cloneable {
                 //EdgeNarrative retNarrative = ret.getBackEdgeNarrative();
                 //copyExistingNarrativeToNewNarrativeAsAppropriate(origNarrative, retNarrative);
             }
-            
+
             orig = orig.getBackState();
         }
-            
+
         // re-enable path parsing
         stateData.opt.rctx.pathParsers = pathParsers;
 
@@ -812,9 +860,9 @@ public class State implements Cloneable {
                         + reversed.stateData.initialWaitTime + ", should be " + newInitialWaitTime);
 
             // copy the path parser states so this path is not thrown out going forward
-//            reversed.pathParserStates = 
+//            reversed.pathParserStates =
 //                    Arrays.copyOf(this.pathParserStates, this.pathParserStates.length, newLength);
-            
+
             // copy things that didn't get copied
             reversed.initializeFieldsFrom(this);
             return reversed;
@@ -836,14 +884,14 @@ public class State implements Cloneable {
     public State reverse() {
         return optimizeOrReverse(false, false);
     }
-    
+
     /**
      * After reverse-optimizing, many things are not set. Set them from the unoptimized state.
      * @param o The other state to initialize things from.
      */
     private void initializeFieldsFrom (State o) {
         StateData currentStateData = this.stateData;
-        
+
         // easier to clone and copy back, plus more future proof
         this.stateData = o.stateData.clone();
         this.stateData.initialWaitTime = currentStateData.initialWaitTime;

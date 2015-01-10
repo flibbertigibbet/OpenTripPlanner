@@ -82,7 +82,7 @@ public class RoutingContext implements Cloneable {
 
     // target means "where this search will terminate" not "the end of the trip from the user's perspective"
     public final Vertex target;
-    
+
     // The back edge associated with the origin - i.e. continuing a previous search.
     // NOTE: not final so that it can be modified post-construction for testing.
     // TODO(flamholz): figure out a better way.
@@ -295,7 +295,7 @@ public class RoutingContext implements Cloneable {
                 ((StreetLocation)fromVertex).getExtra().add(ppse);
             }
         }
-        
+
         if (opt.startingTransitStopId != null) {
             Stop stop = graph.index.stopForId.get(opt.startingTransitStopId);
             TransitStop tstop = graph.index.stopVertexForStop.get(stop);

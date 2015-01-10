@@ -40,6 +40,10 @@ public class GraphPath {
 
     private double walkDistance = 0;
 
+    // total features counts for the path
+    private int benchCount = 0;
+    private int toiletCount = 0;
+
     // don't really need to save this (available through State) but why not
     private RoutingContext rctx;
 
@@ -47,11 +51,11 @@ public class GraphPath {
      * Construct a GraphPath based on the given state by following back-edge fields all the way back
      * to the origin of the search. This constructs a proper Java list of states (allowing random
      * access etc.) from the predecessor information left in states by the search algorithm.
-     * 
+     *
      * Optionally re-traverses all edges backward in order to remove excess waiting time from the
      * final itinerary presented to the user. When planning with departure time, the edges will then
      * be re-traversed once more in order to move the waiting time forward in time, towards the end.
-     * 
+     *
      * @param s
      *            - the state for which a path is requested
      * @param optimize
@@ -95,13 +99,20 @@ public class GraphPath {
         this.edges = new LinkedList<Edge>();
         for (State cur = lastState; cur != null; cur = cur.getBackState()) {
             states.addFirst(cur);
-            
+
             // Record the edge if it exists and this is not the first state in the path.
             if (cur.getBackEdge() != null && cur.getBackState() != null) {
                 edges.addFirst(cur.getBackEdge());
             }
         }
         // dump();
+    }
+
+    public int getBenches() {
+        return states.getLast().getBenches();
+    }
+    public int getToilets() {
+        return states.getLast().getToilets();
     }
 
     /**
@@ -188,14 +199,16 @@ public class GraphPath {
         for (State s : states)
             System.out.println(s + " via " + s.getBackEdge());
         System.out.println(" --- END GRAPHPATH DUMP ---");
-        System.out.println("Total meters walked in this graphpath: " + 
+        System.out.println("Total meters walked in this graphpath: " +
                states.getLast().getWalkDistance());
+        System.out.println("Total benches passed in this graphpath: " + getBenches());
+        System.out.println("Total toilets passed in this graphpath: " + getToilets());
     }
 
     public void dumpPathParser() {
         System.out.println(" --- BEGIN GRAPHPATH DUMP ---");
         System.out.println(this.toString());
-        for (State s : states) 
+        for (State s : states)
             System.out.println(s.getPathParserStates() + s + " via " + s.getBackEdge());
         System.out.println(" --- END GRAPHPATH DUMP ---");
     }
@@ -203,7 +216,7 @@ public class GraphPath {
     public double getWalkDistance() {
         return walkDistance;
     }
-    
+
     public RoutingContext getRoutingContext() {
         return rctx;
     }

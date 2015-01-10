@@ -36,7 +36,7 @@ public class StateData implements Cloneable {
     protected TripTimes tripTimes;
 
     protected AgencyAndId tripId;
-    
+
     protected Trip previousTrip;
 
     protected double lastTransitWalk = 0;
@@ -54,7 +54,7 @@ public class StateData implements Cloneable {
     protected boolean carParked;
 
     protected boolean bikeParked;
-    
+
     protected Stop previousStop;
 
     protected long lastAlightedTime;

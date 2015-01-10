@@ -278,7 +278,7 @@ public class OSMWithTags {
                 || "forestry".equals(access) || "agricultural".equals(access);
         return noThruTraffic;
     }
-    
+
     /**
      * @return True if this node / area is a park and ride.
      */
@@ -288,6 +288,13 @@ public class OSMWithTags {
         return isTag("amenity", "parking")
                 && (parkingType != null && parkingType.contains("park_and_ride"))
                 || (parkAndRide != null && !parkAndRide.equalsIgnoreCase("no"));
+    }
+
+    /**
+     * @return True if this node is a feature.
+     */
+    public boolean isFeature() {
+        return isTag("amenity", "toilets") || (isTag("amenity", "bench"));
     }
 
     /**
