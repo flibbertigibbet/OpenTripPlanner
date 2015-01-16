@@ -140,23 +140,8 @@ public class NetworkLinker {
             }
         }
 
-        /////////////////////////////////////////////////////////////////
         LOG.debug("Linking features...");
         for (FeatureVertex feature : Iterables.filter(vertices, FeatureVertex.class)) {
-
-            /*
-            boolean alreadyLinked = false;
-            for(Edge e : feature.getOutgoing()){
-                if(e instanceof StreetTransitLink) {
-                    alreadyLinked = true;
-                    break;
-                }
-            }
-            if(alreadyLinked) {
-                LOG.warn("Skipping already-linked feature {}: {}", feature.getFeatureType(), feature.getId());
-                continue;
-            }
-            */
 
             if (!networkLinkerLibrary.connectVertexToStreets(feature).getResult()) {
                 LOG.warn("Could not connect a feature to the streets.  TODO: better message here");

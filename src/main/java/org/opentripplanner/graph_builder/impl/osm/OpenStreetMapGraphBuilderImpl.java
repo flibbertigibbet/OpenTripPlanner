@@ -1054,6 +1054,8 @@ public class OpenStreetMapGraphBuilderImpl implements GraphBuilder {
                                                  OSMWay way, int index, long startNode, long endNode, double length,
                                                  StreetTraversalPermission permissions, LineString geometry, boolean back) {
 
+            // TODO: track OSMWay id on StreetEdge here (add edge ID to StreetEdge)
+            ///////////////////////////////////////////////////////////////////////
             String label = "way " + way.getId() + " from " + index;
             label = unique(label);
             String name = getNameForWay(way, label);
