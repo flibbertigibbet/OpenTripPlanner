@@ -20,17 +20,17 @@ import org.opentripplanner.routing.graph.Vertex;
 import java.util.*;
 
 /**
- * A ShortestPathTree implementation that corresponds to a basic Dijkstra search for the earliest 
+ * A ShortestPathTree implementation that corresponds to a basic Dijkstra search for the earliest
  * arrival problem. A single optimal state is tracked per vertex: the one that minimizes
- * arrival time. Optimizing for arrival time eliminates the usual need to maintain Pareto-optimal 
+ * arrival time. Optimizing for arrival time eliminates the usual need to maintain Pareto-optimal
  * sets of states when working on a time-dependent graph.
- * 
- * This approach is more coherent in Analyst when we are extracting travel times from the optimal 
+ *
+ * This approach is more coherent in Analyst when we are extracting travel times from the optimal
  * paths. It should also lead to less branching and faster response times when building large
  * shortest path trees.
- * 
+ *
  * Note that for this SPT to work properly, the work queue should be ordered by time rather than weight.
- * 
+ *
  * @author andrewbyrd
  */
 public class WeightOnlyShortestPathTree extends AbstractShortestPathTree {
@@ -71,7 +71,7 @@ public class WeightOnlyShortestPathTree extends AbstractShortestPathTree {
     private boolean lighterWeight (State s0, State s1) {
         return s0.getWeight() < s1.getWeight();
     }
-    
+
     @Override
     public boolean add(State state) {
         Vertex here = state.getVertex();

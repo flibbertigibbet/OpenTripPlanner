@@ -34,6 +34,7 @@ import org.opentripplanner.routing.core.TraverseModeSet;
 import org.opentripplanner.routing.edgetype.AreaEdge;
 import org.opentripplanner.routing.edgetype.StreetEdge;
 import org.opentripplanner.routing.edgetype.StreetTransitLink;
+import org.opentripplanner.routing.edgetype.StreetFeatureLink;
 import org.opentripplanner.routing.edgetype.StreetWithElevationEdge;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Vertex;
@@ -41,6 +42,7 @@ import org.opentripplanner.routing.impl.CandidateEdgeBundle;
 import org.opentripplanner.routing.util.ElevationUtils;
 import org.opentripplanner.routing.vertextype.IntersectionVertex;
 import org.opentripplanner.routing.vertextype.StreetVertex;
+import org.opentripplanner.routing.vertextype.FeatureVertex;
 import org.opentripplanner.routing.vertextype.TransitStop;
 import org.opentripplanner.routing.vertextype.TransitVertex;
 import org.slf4j.Logger;
@@ -58,7 +60,7 @@ public class LinkRequest {
     private static Logger LOG = LoggerFactory.getLogger(LinkRequest.class);
 
     NetworkLinkerLibrary linker;
-    
+
     private Boolean result;
 
     private List<Edge> edgesAdded = new ArrayList<Edge>();
@@ -78,7 +80,7 @@ public class LinkRequest {
         this.linker = linker;
         this.distanceLibrary = linker.getDistanceLibrary();
     }
-    
+
     public boolean getResult() {
         if (result == null) {
             throw new IllegalStateException("Can't get result of LinkRequest; no operation performed");
@@ -88,12 +90,12 @@ public class LinkRequest {
 
     /**
      * For the given vertex, find or create some vertices nearby in the street network.
-     * Once the vertices are found they are remembered, and subsequent calls to this 
-     * method with the same Vertex argument will return the same collection of vertices. 
-     * This method is potentially called multiple times with the same Vertex as an argument, 
+     * Once the vertices are found they are remembered, and subsequent calls to this
+     * method with the same Vertex argument will return the same collection of vertices.
+     * This method is potentially called multiple times with the same Vertex as an argument,
      * via the "determineIncomingEdgesForVertex" and "determineOutgoingEdgesForVertex" methods.
-     * 
-     * Used by both the network linker and for adding temporary "extra" edges at the origin 
+     *
+     * Used by both the network linker and for adding temporary "extra" edges at the origin
      * and destination of a search.
      */
     private Collection<StreetVertex> getNearbyStreetVertices(Vertex v,
@@ -103,11 +105,18 @@ public class LinkRequest {
         if (existing != null)
             return existing;
 
-        String vertexLabel;
-        if (v instanceof TransitVertex)
+        String vertexLabel = "";
+        String featureType = "";
+
+        if (v instanceof TransitVertex) {
             vertexLabel = "link for " + ((TransitVertex)v).getStopId();
-        else
+        } else if (v instanceof FeatureVertex) {
+            featureType = ((FeatureVertex)v).getFeatureType();
+            vertexLabel = "link for feature " + featureType;
+        } else {
             vertexLabel = "link for " + v;
+        }
+
         Coordinate coordinate = v.getCoordinate();
 
         /* is there a bundle of edges nearby to use or split? */
@@ -120,7 +129,7 @@ public class LinkRequest {
             LOG.debug("found too few edges: {} {}", v.getName(), v.getCoordinate());
             return null;
         }
-        // if the bundle was caught endwise (T intersections and dead ends), 
+        // if the bundle was caught endwise (T intersections and dead ends),
         // get the intersection instead.
         if (edges.endwise()) {
             List<StreetVertex> list = Arrays.asList(edges.endwiseVertex);
@@ -134,19 +143,21 @@ public class LinkRequest {
                 if (edges.getScore() > distanceLibrary.distance(atIntersection.getCoordinate(), coordinate))
                     return Arrays.asList(atIntersection);
             }
-            return getSplitterVertices(vertexLabel, edges.toEdgeList(), coordinate);
+
+            return getSplitterVertices(vertexLabel, edges.toEdgeList(), coordinate, featureType);
         }
     }
 
-    /** 
+    /**
      * Given a bundle of parallel, coincident edges, find a vertex splitting the set of edges as close as
-     * possible to the given coordinate. If necessary, create new edges reflecting the split and update the 
-     * replacement edge lists accordingly. 
-     * 
+     * possible to the given coordinate. If necessary, create new edges reflecting the split and update the
+     * replacement edge lists accordingly.
+     *
      * Split edges are not added to the graph immediately, so that they can be re-split later if another stop
      * is located near the same bundle of original edges.
      */
-    private Collection<StreetVertex> getSplitterVertices(String label, Collection<StreetEdge> edges, Coordinate coordinate) {
+    private Collection<StreetVertex> getSplitterVertices(String label, Collection<StreetEdge> edges,
+                                                         Coordinate coordinate, String featureType) {
 
         // It is assumed that we are splitting at least one edge.
         if (edges.size() < 1) {
@@ -163,6 +174,15 @@ public class LinkRequest {
             StreetEdge second = null;
             while (iter.hasNext()) {
                 StreetEdge edge = iter.next();
+                // this ensures features will be set on original reverse edges as well
+                if (!featureType.isEmpty()) {
+                    if (featureType.equals("bench")) {
+                        edge.addBench();
+                    } else if (featureType.equals("toilet")) {
+                        edge.addToilet();
+                    }
+                }
+
                 if (edge.getFromVertex() == first.getToVertex() && edge.getToVertex() == first.getFromVertex()) {
                     second = edge;
                 }
@@ -173,6 +193,17 @@ public class LinkRequest {
             } else {
                 secondClone = ((StreetEdge) second).clone();
             }
+
+            // add feature to both edges to the original PlainStreetEdges, before cloning them
+            if (!featureType.isEmpty()) {
+                LOG.info("Adding feature {} to both edges in original pair.", featureType);
+                if (featureType.equals("bench")) {
+                    first.addBench();
+                } else {
+                    first.addToilet();
+                }
+            }
+
             P2<StreetEdge> newEdges = new P2<StreetEdge>(((StreetEdge) first).clone(), secondClone);
             replacement.add(newEdges);
             linker.replacements.put(edgeSet, replacement);
@@ -191,7 +222,7 @@ public class LinkRequest {
                 bestPair = pair;
             }
         }
-        
+
         // split the (sub)segment edge pair as needed, returning vertices at the split point
         return split(replacement, label, bestPair, coordinate);
     }
@@ -210,7 +241,7 @@ public class LinkRequest {
         StreetVertex e1v1 = (StreetVertex) e1.getFromVertex();
         StreetVertex e1v2 = (StreetVertex) e1.getToVertex();
         LineString forwardGeometry = e1.getGeometry();
-        
+
         StreetVertex e2v1 = null;
         StreetVertex e2v2 = null;
         P2<LineString> backGeometryPair = null;
@@ -221,7 +252,7 @@ public class LinkRequest {
             backGeometryPair = GeometryUtils.splitGeometryAtPoint(backGeometry,
                     coordinate);
         }
-        
+
         P2<LineString> forwardGeometryPair = GeometryUtils.splitGeometryAtPoint(forwardGeometry,
                 coordinate);
 
@@ -233,7 +264,7 @@ public class LinkRequest {
         double totalGeomLength = forwardGeometry.getLength();
         double lengthRatioIn = forward1Geom.getLength() / totalGeomLength;
 
-        // If coordinate is coincident with an endpoint of the edge pair, splitting is unnecessary. 
+        // If coordinate is coincident with an endpoint of the edge pair, splitting is unnecessary.
         // note: the pair potentially being split was generated by the 'replace' method,
         // so the two PlainStreetEdges are known to be pointing in opposite directions.
         if (lengthRatioIn < 0.00001) {
@@ -255,7 +286,7 @@ public class LinkRequest {
         double lengthIn  = e1.getDistance() * lengthRatioIn;
         double lengthOut = e1.getDistance() * (1 - lengthRatioIn);
 
-        // Split each edge independently. If a only one splitter vertex is used, routing may take 
+        // Split each edge independently. If a only one splitter vertex is used, routing may take
         // shortcuts thought the splitter vertex to avoid turn penalties.
         IntersectionVertex e1midpoint = new IntersectionVertex(linker.graph, "split 1 at " + label, midCoord.x, midCoord.y, name);
         // We are replacing two edges with four edges
@@ -322,16 +353,17 @@ public class LinkRequest {
                 break;
             }
         }
-        
+
         // disconnect the two old edges from the graph
         linker.graph.removeTemporaryEdge(e1);
         edgesAdded.remove(e1);
         //e1.detach();
-        
+
         if (e2 != null) {
             linker.graph.removeTemporaryEdge(e2);
             edgesAdded.remove(e2);
             //e2.detach();
+
             // return the two new splitter vertices
             return Arrays.asList((StreetVertex) e1midpoint, e2midpoint);
         } else {
@@ -377,8 +409,55 @@ public class LinkRequest {
     }
 
     /**
+     * Link a feature vertex, and assign properties to linked street.
+     * TODO: how to identify street feature is linked to?
+     **********************************************************************************
+     *
+     * @param v The vertex to link to the street network
+     * @param modes The required traverse mode permissions for the street to link to (optional, can be null).
+     * @param streetLinkFactory Factory of linking edges to link this vertex to any found street vertices.
+     * Sets result to true if the links were successfully added, otherwise false
+     */
+    public void connectFeatureVertexToStreets(FeatureVertex v,
+            StreetLinkFactory<FeatureVertex> streetLinkFactory) {
+        //LOG.info("in connectVertexToStreets with a FeatureVertex...");
+        RoutingRequest request = null;
+        FeatureVertex fv = (FeatureVertex)v;
+        TraverseModeSet modes = new TraverseModeSet(TraverseMode.WALK, TraverseMode.BICYCLE);
+        if (modes != null) {
+            request = new RoutingRequest(modes);
+        }
+        Collection<StreetVertex> nearbyStreetVertices = getNearbyStreetVertices(v, null, request,
+                false);
+        if (nearbyStreetVertices == null) {
+            result = false;
+        } else {
+            for (StreetVertex sv : nearbyStreetVertices) {
+                // these are the added edges making the link being added here
+                Collection<? extends Edge> edges = streetLinkFactory.connect(sv, v);
+                addEdges(edges.toArray(new Edge[0]));
+
+                // set features on the edges added by the split above
+                for (Edge edge : edges) {
+                    if (edge instanceof StreetEdge) {
+                        StreetEdge se = (StreetEdge) edge;
+                        if (fv.getFeatureType().equals("bench")) {
+                            LOG.info("Adding bench on edge {}", se.toString());
+                            se.addBench();
+                        } else if (fv.getFeatureType().equals("toilet")) {
+                            LOG.info("Adding toilet on edge {}", se.toString());
+                            se.addToilet();
+                        }
+                    }
+                }
+            }
+            result = true;
+        }
+    }
+
+    /**
      * Link a generic vertex.
-     * 
+     *
      * @param v The vertex to link to the street network
      * @param modes The required traverse mode permissions for the street to link to (optional, can be null).
      * @param streetLinkFactory Factory of linking edges to link this vertex to any found street vertices.

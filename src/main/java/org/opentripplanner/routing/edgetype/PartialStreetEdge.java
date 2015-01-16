@@ -45,7 +45,7 @@ public class PartialStreetEdge extends StreetWithElevationEdge {
         setCarSpeed(parentEdge.getCarSpeed());
         this.parentEdge = parentEdge;
     }
-    
+
     /**
      * Simplifies construction by copying some stuff from the parentEdge.
      */
@@ -53,7 +53,7 @@ public class PartialStreetEdge extends StreetWithElevationEdge {
                              LineString geometry, String name, double length) {
         this(parentEdge, v1, v2, geometry, name, length, parentEdge.getPermission(), false);
     }
-    
+
     /**
      * Partial edges are always partial.
      */
@@ -61,7 +61,7 @@ public class PartialStreetEdge extends StreetWithElevationEdge {
     public boolean isPartial() {
         return true;
     }
-    
+
     /**
      * Have the ID of their parent.
      */
@@ -69,7 +69,7 @@ public class PartialStreetEdge extends StreetWithElevationEdge {
     public int getId() {
         return parentEdge.getId();
     }
-    
+
     /**
      * Have the inbound angle of  their parent.
      */
@@ -77,7 +77,7 @@ public class PartialStreetEdge extends StreetWithElevationEdge {
     public int getInAngle() {
         return parentEdge.getInAngle();
     }
-    
+
     /**
      * Have the outbound angle of  their parent.
      */
@@ -85,7 +85,7 @@ public class PartialStreetEdge extends StreetWithElevationEdge {
     public int getOutAngle() {
         return parentEdge.getInAngle();
     }
-    
+
     /**
      * This implementation makes it so that TurnRestrictions on the parent edge are applied to this edge as well.
      */
@@ -93,23 +93,23 @@ public class PartialStreetEdge extends StreetWithElevationEdge {
     public boolean isEquivalentTo(Edge e) {
         return (e == this || e == parentEdge);
     }
-    
+
     @Override
     public boolean isReverseOf(Edge e) {
         Edge other = e;
         if (e instanceof PartialStreetEdge) {
             other = ((PartialStreetEdge) e).parentEdge;
         }
-        
+
         // TODO(flamholz): is there a case where a partial edge has a reverse of its own?
         return parentEdge.isReverseOf(other);
     }
-    
+
     @Override
     public boolean isRoundabout() {
         return parentEdge.isRoundabout();
     }
-    
+
     /**
      * Returns true if this edge is trivial - beginning and ending at the same point.
      */
@@ -118,7 +118,7 @@ public class PartialStreetEdge extends StreetWithElevationEdge {
         Coordinate toCoord = this.getToVertex().getCoordinate();
         return fromCoord.equals(toCoord);
     }
-    
+
     public StreetEdge getParentEdge() {
         return parentEdge;
     }

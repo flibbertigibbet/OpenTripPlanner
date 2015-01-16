@@ -92,7 +92,7 @@ public class PlanGenerator {
         // TODO: this seems to only check the endpoints, which are usually auto-generated
         //if ( ! options.isAccessible())
         //    throw new LocationNotAccessible();
-        
+
         // Copy options to keep originals
         RoutingRequest originalOptions = options.clone();
 
@@ -262,7 +262,7 @@ public class PlanGenerator {
 
     private Calendar makeCalendar(State state) {
         RoutingContext rctx = state.getContext();
-        TimeZone timeZone = rctx.graph.getTimeZone(); 
+        TimeZone timeZone = rctx.graph.getTimeZone();
         Calendar calendar = Calendar.getInstance(timeZone);
         calendar.setTimeInMillis(state.getTimeInMillis());
         return calendar;
@@ -362,8 +362,10 @@ public class PlanGenerator {
 
         Edge[] edges = new Edge[states.length - 1];
 
+        State lastState = states[states.length - 1];
+
         leg.startTime = makeCalendar(states[0]);
-        leg.endTime = makeCalendar(states[states.length - 1]);
+        leg.endTime = makeCalendar(lastState);
 
         // Calculate leg distance and fill array of edges
         leg.distance = 0.0;
@@ -379,6 +381,9 @@ public class PlanGenerator {
 
         addTripFields(leg, states);
 
+        leg.benches = lastState.getBenches();
+        leg.toilets = lastState.getToilets();
+
         addPlaces(leg, states, edges, showIntermediateStops);
 
         if (leg.isTransitLeg()) addRealTimeData(leg, states);
@@ -392,7 +397,7 @@ public class PlanGenerator {
 
         addFrequencyFields(states, leg);
 
-        leg.rentedBike = states[0].isBikeRenting() && states[states.length - 1].isBikeRenting();
+        leg.rentedBike = states[0].isBikeRenting() && lastState.isBikeRenting();
 
         return leg;
     }
@@ -518,7 +523,7 @@ public class PlanGenerator {
     }
 
     /**
-     * Calculate the walkTime, transitTime and waitingTime of an {@link Itinerary}.
+     * Calculate the walkTime, transitTime, feature counts, and waitingTime of an {@link Itinerary}.
      *
      * @param itinerary The itinerary to calculate the times for
      * @param states The states that go with the itinerary
@@ -537,6 +542,9 @@ public class PlanGenerator {
                     break;
 
                 case WALK:
+                    itinerary.benches = state.getBenches();
+                    itinerary.toilets = state.getToilets();
+                    break;
                 case BICYCLE:
                 case CAR:
                 case CUSTOM_MOTOR_VEHICLE:
@@ -748,9 +756,9 @@ public class PlanGenerator {
 
     /**
      * Converts a list of street edges to a list of turn-by-turn directions.
-     * 
+     *
      * @param previous a non-transit leg that immediately precedes this one (bike-walking, say), or null
-     * 
+     *
      * @return
      */
     public static List<WalkStep> generateWalkSteps(Graph graph, State[] states, WalkStep previous) {
@@ -958,34 +966,34 @@ public class PlanGenerator {
 
                     if (twoBack.distance < MAX_ZAG_DISTANCE
                             && lastStep.streetNameNoParens().equals(threeBack.streetNameNoParens())) {
-                        
-                        if (((lastStep.relativeDirection == RelativeDirection.RIGHT || 
+
+                        if (((lastStep.relativeDirection == RelativeDirection.RIGHT ||
                                 lastStep.relativeDirection == RelativeDirection.HARD_RIGHT) &&
                                 (twoBack.relativeDirection == RelativeDirection.RIGHT ||
                                 twoBack.relativeDirection == RelativeDirection.HARD_RIGHT)) ||
-                                ((lastStep.relativeDirection == RelativeDirection.LEFT || 
+                                ((lastStep.relativeDirection == RelativeDirection.LEFT ||
                                 lastStep.relativeDirection == RelativeDirection.HARD_LEFT) &&
                                 (twoBack.relativeDirection == RelativeDirection.LEFT ||
                                 twoBack.relativeDirection == RelativeDirection.HARD_LEFT))) {
-                            // in this case, we have two left turns or two right turns in quick 
+                            // in this case, we have two left turns or two right turns in quick
                             // succession; this is probably a U-turn.
-                            
+
                             steps.remove(last - 1);
-                            
+
                             lastStep.distance += twoBack.distance;
-                            
-                            // A U-turn to the left, typical in the US. 
-                            if (lastStep.relativeDirection == RelativeDirection.LEFT || 
+
+                            // A U-turn to the left, typical in the US.
+                            if (lastStep.relativeDirection == RelativeDirection.LEFT ||
                                     lastStep.relativeDirection == RelativeDirection.HARD_LEFT)
                                 lastStep.relativeDirection = RelativeDirection.UTURN_LEFT;
                             else
                                 lastStep.relativeDirection = RelativeDirection.UTURN_RIGHT;
-                            
-                            // in this case, we're definitely staying on the same street 
+
+                            // in this case, we're definitely staying on the same street
                             // (since it's zag removal, the street names are the same)
                             lastStep.stayOn = true;
                         }
-                                
+
                         else {
                             // total hack to remove zags.
                             steps.remove(last);
@@ -1022,6 +1030,13 @@ public class PlanGenerator {
             step.distance += edge.getDistance();
             step.addAlerts(graph.streetNotesService.getNotes(forwardState));
             lastAngle = DirectionUtils.getLastAngle(geom);
+
+            // Put feature counts on walking directions
+            if (edge instanceof StreetEdge) {
+                StreetEdge street = (StreetEdge) edge;
+                step.benches += street.getBenchCount();
+                step.toilets += street.getToiletCount();
+            }
         }
         return steps;
     }
@@ -1052,8 +1067,8 @@ public class PlanGenerator {
         step.elevation = encodeElevationProfile(s.getBackEdge(), 0);
         step.bogusName = en.hasBogusName();
         step.addAlerts(graph.streetNotesService.getNotes(s));
-        step.angle = DirectionUtils.getFirstAngle(s.getBackEdge().getGeometry());
-        if (s.getBackEdge() instanceof AreaEdge) {
+        step.angle = DirectionUtils.getFirstAngle(en.getGeometry());
+        if (en instanceof AreaEdge) {
             step.area = true;
         }
         return step;

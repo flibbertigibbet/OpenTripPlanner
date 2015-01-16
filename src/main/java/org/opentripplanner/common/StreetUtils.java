@@ -147,7 +147,7 @@ public class StreetUtils {
             }
         }
         if (graph.removeEdgelessVertices() > 0) {
-            LOG.warn("Removed edgeless vertices after pruning islands");
+            LOG.warn("Removed " + graph.removeEdgelessVertices() + " edgeless vertices after pruning islands");
         }
     }
 

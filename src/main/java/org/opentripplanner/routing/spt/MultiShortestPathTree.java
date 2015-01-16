@@ -34,12 +34,15 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 
 public class MultiShortestPathTree extends AbstractShortestPathTree {
-	
+
 	private static final double WALK_DIST_EPSILON = 0.05;
 	private static final double WEIGHT_EPSILON = 0.02;
 	private static final int WEIGHT_DIFF_MARGIN = 30;
 	private static final double TIME_EPSILON = 0.02;
 	private static final int TIME_DIFF_MARGIN = 30;
+
+    private static boolean preferBenches;
+    private static boolean preferToilets;
 
     private static final Logger LOG = LoggerFactory.getLogger(MultiShortestPathTree.class);
 
@@ -70,6 +73,8 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
 
     public MultiShortestPathTree(RoutingRequest options) {
         super(options);
+        preferBenches = options.preferBenches;
+        preferToilets = options.preferToilets;
         stateSets = new IdentityHashMap<Vertex, List<State>>();
     }
 
@@ -85,7 +90,7 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
     public boolean add(State newState) {
         Vertex vertex = newState.getVertex();
         List<State> states = stateSets.get(vertex);
-        
+
         // if the vertex has no states, add one and return
         if (states == null) {
             states = new ArrayList<State>();
@@ -93,7 +98,7 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
             states.add(newState);
             return true;
         }
-        
+
         // if the vertex has any states that dominate the new state, don't add the state
         // if the new state dominates any old states, remove them
         Iterator<State> it = states.iterator();
@@ -106,14 +111,18 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
             if (dominates( newState, oldState) )
                 it.remove();
         }
-        
+
         // any states remaining are codominent with the new state
         states.add(newState);
         return true;
     }
 
     public static boolean dominates(State thisState, State other) {
-        if (other.weight == 0) {
+        // show warning if graph visualizer attempts to check without a selection
+        if ((other == null) || (thisState == null) || other.weight == 0) {
+            if (other == null) {
+                LOG.warn("No other in dominates!");
+            }
             return false;
         }
         // Multi-state (bike rental, P+R) - no domination for different states
@@ -123,6 +132,19 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
             return false;
         if (thisState.isBikeParked() != other.isBikeParked())
             return false;
+
+        ///////////////
+        // TODO: It would probably be better to come up with some kind of "is hopeful" measurement
+        // below for deciding when/if to dominate in feature-preference mode; otherwise,
+        // it's possible to wind up going round and round loops looking for paths through them,
+        // until the query times out. However, it's good to explore more paths in
+        // feature-preference mode, in order to discover more paths with features on them.
+        ///////////////////
+        if (preferBenches && (thisState.hasBenches() || other.hasBenches()))
+            return false;
+        if (preferToilets && (thisState.hasToilets() || other.hasToilets()))
+            return false;
+        ///////////////////
 
         Graph graph = thisState.getOptions().rctx.graph;
         if (thisState.backEdge != other.getBackEdge() && ((thisState.backEdge instanceof StreetEdge)
@@ -139,17 +161,17 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
         // If returning more than one result from GenericAStar, the search can be very slow
         // unless you replace the following code with:
         // return false;
-        
+
         boolean walkDistanceIsHopeful = thisState.walkDistance / other.getWalkDistance() < 1+WALK_DIST_EPSILON;
-        
+
         double weightRatio = thisState.weight / other.weight;
         boolean weightIsHopeful = (weightRatio < 1+WEIGHT_EPSILON && thisState.weight - other.weight < WEIGHT_DIFF_MARGIN);
-        
+
         double t1 = (double)thisState.getElapsedTimeSeconds();
         double t2 = (double)other.getElapsedTimeSeconds();
         double timeRatio = t1/t2;
         boolean timeIsHopeful = (timeRatio < 1+TIME_EPSILON) && (t1 - t2 <= TIME_DIFF_MARGIN);
-        
+
         // only dominate if everything is at least hopeful
         return walkDistanceIsHopeful && weightIsHopeful && timeIsHopeful;
 //    	return this.weight < other.weight;
@@ -180,16 +202,16 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
     }
 
     /**
-     * Check that a state coming out of the queue is still in the Pareto-optimal set for this vertex, 
-     * which indicates that it has not been ruled out as a state on an optimal path. Many shortest 
+     * Check that a state coming out of the queue is still in the Pareto-optimal set for this vertex,
+     * which indicates that it has not been ruled out as a state on an optimal path. Many shortest
      * path algorithms will decrease the key of an entry in the priority queue when it is updated, or
      * remove it when it is dominated.
-     * 
-     * When the Fibonacci heap was replaced with a binary heap, the decrease-key operation was 
-     * removed for the same reason: both improve theoretical run time complexity, at the cost of 
+     *
+     * When the Fibonacci heap was replaced with a binary heap, the decrease-key operation was
+     * removed for the same reason: both improve theoretical run time complexity, at the cost of
      * high constant factors and more complex code.
-     * 
-     * So there can be dominated (useless) states in the queue. When they come out we want to 
+     *
+     * So there can be dominated (useless) states in the queue. When they come out we want to
      * ignore them rather than spend time branching out from them.
      */
     @Override

@@ -54,7 +54,7 @@ import com.vividsolutions.jts.geom.LineString;
 public class StreetLocation extends StreetVertex {
 
     private static final Logger LOG = LoggerFactory.getLogger(StreetLocation.class);
-    
+
     private static DistanceLibrary distanceLibrary = SphericalDistanceLibrary.getInstance();
 
     private ArrayList<Edge> extra = new ArrayList<Edge>();
@@ -77,14 +77,14 @@ public class StreetLocation extends StreetVertex {
     /**
      * Creates a StreetLocation on the given street (set of PlainStreetEdges). How far along is controlled by the location parameter, which represents
      * a distance along the edge between 0 (the from vertex) and 1 (the to vertex).
-     * 
+     *
      * @param graph
-     * 
+     *
      * @param label
      * @param name
      * @param edges A collection of nearby edges, which represent one street.
      * @param nearestPoint
-     * 
+     *
      * @return the new StreetLocation
      */
     public static StreetLocation createStreetLocation(Graph graph, String label, String name,
@@ -139,7 +139,7 @@ public class StreetLocation extends StreetVertex {
 
             // location is somewhere in the middle of the edge.
             edgeLocation = location;
-            
+
             // creates links from street head -> location -> street tail.
             createHalfLocation(graph, location, label + " to " + tov.getLabel(), name,
                     nearestPoint, street);
@@ -148,7 +148,7 @@ public class StreetLocation extends StreetVertex {
         return location;
 
     }
-    
+
     public static StreetLocation createStreetLocation(Graph graph, String label, String name,
             Iterable<StreetEdge> edges, Coordinate nearestPoint) {
 
@@ -174,7 +174,7 @@ public class StreetLocation extends StreetVertex {
             } else {
                 // location is somewhere in the middle of the edge.
                 edgeLocation = location;
-                
+
                 // creates links from street head -> location -> street tail.
                 createHalfLocation(graph, location, label + " to " + tov.getLabel(), name,
                         nearestPoint, street);
@@ -225,7 +225,7 @@ public class StreetLocation extends StreetVertex {
                 street.getElevationProfile(), lengthIn, lengthIn + lengthOut), false);
         newRight.setStreetClass(street.getStreetClass());
         newRight.setNoThruTraffic(street.isNoThruTraffic());
-        
+
         // Copy turn restrictions onto the outgoing half-edge.
         for (TurnRestriction turnRestriction : graph.getTurnRestrictions(street)) {
             graph.addTurnRestriction(newRight, turnRestriction);
@@ -283,7 +283,7 @@ public class StreetLocation extends StreetVertex {
     @Override
     public int removeTemporaryEdges(Graph graph) {
         int nRemoved = 0;
-        for (Edge e : getExtra()) {            
+        for (Edge e : getExtra()) {
             graph.removeTemporaryEdge(e);
             // edges might already be detached
             if (e.detach(graph) != 0) nRemoved += 1;
@@ -294,8 +294,8 @@ public class StreetLocation extends StreetVertex {
     /**
      * This finalizer is intended as a failsafe to prevent memory leakage in case someone does
      * not remove temporary edges. It could even be considered an error if it does any work.
-     * removeTemporaryEdges is called by both this finalizer and the RoutingContext.destroy() 
-     * method, which is in turn called by the RoutingRequest.cleanup() method. You need to call 
+     * removeTemporaryEdges is called by both this finalizer and the RoutingContext.destroy()
+     * method, which is in turn called by the RoutingRequest.cleanup() method. You need to call
      * one of these after you handle a request and know that you no longer need the context.
      */
     @Override

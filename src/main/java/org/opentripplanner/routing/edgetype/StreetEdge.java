@@ -44,9 +44,9 @@ import com.vividsolutions.jts.geom.LineString;
 
 /**
  * This represents a street segment.
- * 
+ *
  * @author novalis
- * 
+ *
  */
 public class StreetEdge extends Edge implements Cloneable {
 
@@ -78,6 +78,10 @@ public class StreetEdge extends Edge implements Cloneable {
     private static final int SLOPEOVERRIDE_FLAG_INDEX = 5;
     private static final int WHEELCHAIR_ACCESSIBLE_FLAG_INDEX = 6;
 
+    /* Counts of features on this edge */
+    private int benchCount = 0;
+    private int toiletCount = 0;
+
     /** back, roundabout, stairs, ... */
     private byte flags;
 
@@ -96,13 +100,13 @@ public class StreetEdge extends Edge implements Cloneable {
     protected float bicycleSafetyFactor;
 
     private int[] compactGeometry;
-    
+
     private String name;
 
     private StreetTraversalPermission permission;
 
     private int streetClass = CLASS_OTHERPATH;
-    
+
     /**
      * The speed (meters / sec) at which an automobile can traverse
      * this street segment.
@@ -167,14 +171,14 @@ public class StreetEdge extends Edge implements Cloneable {
                 return false;
             }
         }
-        
+
         return canTraverse(options.modes);
     }
-    
+
     public boolean canTraverse(TraverseModeSet modes) {
         return getPermission().allows(modes);
     }
-    
+
     private boolean canTraverse(RoutingRequest options, TraverseMode mode) {
         if (options.wheelchairAccessible) {
             if (!isWheelchairAccessible()) {
@@ -274,7 +278,7 @@ public class StreetEdge extends Edge implements Cloneable {
 
         // Automobiles have variable speeds depending on the edge type
         double speed = calculateSpeed(options, traverseMode);
-        
+
         double time = getDistance() / speed;
         double weight;
         // TODO(flamholz): factor out this bike, wheelchair and walking specific logic to somewhere central.
@@ -327,6 +331,7 @@ public class StreetEdge extends Edge implements Cloneable {
                 // for the walkspeed set by the user
                 double elevationUtilsSpeed = 4.0 / 3.0;
                 weight = costs * (elevationUtilsSpeed / speed);
+
                 time = weight; //treat cost as time, as in the current model it actually is the same (this can be checked for maxSlope == 0)
                 /*
                 // debug code
@@ -336,6 +341,18 @@ public class StreetEdge extends Edge implements Cloneable {
                 }
                 */
             }
+        }
+
+        if (options.preferBenches && (getBenchCount() > 0)) {
+            LOG.info("Found edge {}: {} has a bench!  Weighting it.", getName(), getId());
+            weight *= 0.001;
+            time *= 0.001;
+        }
+
+        if (options.preferToilets && (getToiletCount() > 0)) {
+            LOG.info("Found edge {}: {} has a toilet!  Weighting it.", getName(), getId());
+            weight *= 0.001;
+            time *= 0.001;
         }
 
         if (isStairs()) {
@@ -356,7 +373,7 @@ public class StreetEdge extends Edge implements Cloneable {
             RoutingRequest backOptions = backWalkingBike ?
                     s0.getOptions().bikeWalkingOptions : s0.getOptions();
             double backSpeed = backPSE.calculateSpeed(backOptions, backMode);
-            final double realTurnCost;  // Units are seconds.
+            double realTurnCost;  // Units are seconds.
 
             // Apply turn restrictions
             if (options.arriveBy && !canTurnOnto(backPSE, s0, backMode)) {
@@ -387,11 +404,21 @@ public class StreetEdge extends Edge implements Cloneable {
 
                 realTurnCost = options.getIntersectionTraversalCostModel().computeTraversalCost(
                         traversedVertex, backPSE, this, traverseMode, options, (float) backSpeed,
-                        (float) speed);                
+                        (float) speed);
             } else {
                 // In case this is a temporary edge not connected to an IntersectionVertex
                 LOG.debug("Not computing turn cost for edge {}", this);
-                realTurnCost = 0; 
+                realTurnCost = 0;
+            }
+
+            if (options.preferBenches && (getBenchCount() > 0)) {
+                LOG.info("Found edge {}: {} has a bench!  Changing its turn cost.", getName(), getId());
+                realTurnCost *= 0.001;
+            }
+
+            if (options.preferToilets && (getToiletCount() > 0)) {
+                LOG.info("Found edge {}: {} has a toilet!  Changing its turn cost.", getName(), getId());
+                realTurnCost *= 0.001;
             }
 
             if (!traverseMode.isDriving()) {
@@ -402,7 +429,7 @@ public class StreetEdge extends Edge implements Cloneable {
             time += turnTime;
             weight += options.turnReluctance * realTurnCost;
         }
-        
+
 
         if (walkingBike || TraverseMode.BICYCLE.equals(traverseMode)) {
             if (!(backWalkingBike || TraverseMode.BICYCLE.equals(backMode))) {
@@ -414,6 +441,10 @@ public class StreetEdge extends Edge implements Cloneable {
         if (!traverseMode.isDriving()) {
             s1.incrementWalkDistance(getDistance());
         }
+
+        // accummulate feature counts
+        s1.incrementBenchCount(getBenchCount());
+        s1.incrementToiletCount(getToiletCount());
 
         /* On the pre-kiss/pre-park leg, limit both walking and driving, either soft or hard. */
         int roundedTime = (int) Math.ceil(time);
@@ -431,7 +462,7 @@ public class StreetEdge extends Edge implements Cloneable {
                 } else return null;
             }
         }
-        
+
         /* Apply a strategy for avoiding walking too far, either soft (weight increases) or hard limiting (pruning). */
         if (s1.weHaveWalkedTooFar(options)) {
 
@@ -449,7 +480,6 @@ public class StreetEdge extends Edge implements Cloneable {
         }
 
         s1.incrementTimeInSeconds(roundedTime);
-        
         s1.incrementWeight(weight);
 
         return s1;
@@ -479,7 +509,7 @@ public class StreetEdge extends Edge implements Cloneable {
     private double calculateCarSpeed(RoutingRequest options) {
         return getCarSpeed();
     }
-    
+
     /**
      * Calculate the speed appropriately given the RoutingRequest and traverseMode.
      */
@@ -525,8 +555,8 @@ public class StreetEdge extends Edge implements Cloneable {
 
     public String toString() {
         return "PlainStreetEdge(" + getId() + ", " + name + ", " + fromv + " -> " + tov
-                + " length=" + this.getDistance() + " carSpeed=" + this.getCarSpeed()
-                + " permission=" + this.getPermission() + ")";
+                + " length=" + this.getDistance() + " benches=" + benchCount
+                + " toilets=" + toiletCount + " permission=" + this.getPermission() + ")";
     }
 
     @Override
@@ -537,14 +567,14 @@ public class StreetEdge extends Edge implements Cloneable {
             throw new RuntimeException(e);
         }
     }
-    
+
     public boolean canTurnOnto(Edge e, State state, TraverseMode mode) {
         Graph graph = state.getOptions().rctx.graph;
         for (TurnRestriction restriction : graph.getTurnRestrictions(this)) {
             /* FIXME: This is wrong for trips that end in the middle of restriction.to
              */
 
-            // NOTE(flamholz): edge to be traversed decides equivalence. This is important since 
+            // NOTE(flamholz): edge to be traversed decides equivalence. This is important since
             // it might be a temporary edge that is equivalent to some graph edge.
             if (restriction.type == TurnRestrictionType.ONLY_TURN) {
                 if (!e.isEquivalentTo(restriction.to) && restriction.modes.contains(mode) &&
@@ -660,6 +690,30 @@ public class StreetEdge extends Edge implements Cloneable {
 	public void setNoThruTraffic(boolean noThruTraffic) {
 	    flags = BitSetUtils.set(flags, NOTHRUTRAFFIC_FLAG_INDEX, noThruTraffic);
 	}
+
+    public int getBenchCount() {
+         return benchCount;
+    }
+
+    public void addBench() {
+        benchCount += 1;
+    }
+
+    public void setBenchCount(int count) {
+        benchCount = count;
+    }
+
+    public int getToiletCount() {
+        return toiletCount;
+    }
+
+    public void addToilet() {
+        toiletCount += 1;
+    }
+
+    public void setToiletCount(int count) {
+        toiletCount = count;
+    }
 
 	/**
 	 * This street is a staircase

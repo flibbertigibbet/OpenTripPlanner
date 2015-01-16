@@ -76,6 +76,7 @@ import org.opentripplanner.routing.vertextype.ElevatorOffboardVertex;
 import org.opentripplanner.routing.vertextype.ElevatorOnboardVertex;
 import org.opentripplanner.routing.vertextype.ExitVertex;
 import org.opentripplanner.routing.vertextype.IntersectionVertex;
+import org.opentripplanner.routing.vertextype.FeatureVertex;
 import org.opentripplanner.routing.vertextype.ParkAndRideVertex;
 import org.opentripplanner.routing.vertextype.TransitStopStreetVertex;
 import org.slf4j.Logger;
@@ -257,6 +258,8 @@ public class OpenStreetMapGraphBuilderImpl implements GraphBuilder {
                 processBikeParkAndRideNodes();
             }
 
+            processFeatureNodes();
+
             for (Area area : Iterables.concat(osmdb.getWalkableAreas(),
                     osmdb.getParkAndRideAreas(), osmdb.getBikeParkingAreas()))
                 setWayName(area.parent);
@@ -363,6 +366,34 @@ public class OpenStreetMapGraphBuilderImpl implements GraphBuilder {
             LOG.info("Created " + n + " bike P+R.");
         }
 
+        private void processFeatureNodes() {
+            LOG.info("Processing feature nodes...");
+            int n = 0;
+
+            for (OSMNode node : osmdb.getBenchNodes()) {
+                n++;
+                String creativeName = wayPropertySet.getCreativeNameForWay(node);
+                if (creativeName == null) {
+                    creativeName = "bench";
+                }
+                FeatureVertex feature = new FeatureVertex(graph, "bench", "" + node.getId(),
+                                                          node.lon, node.lat, creativeName);
+            }
+            LOG.info("Created {} benches.", n);
+
+            n = 0;
+            for (OSMNode node : osmdb.getToiletNodes()) {
+                n++;
+                String creativeName = wayPropertySet.getCreativeNameForWay(node);
+                if (creativeName == null) {
+                    creativeName = "toilet";
+                }
+                FeatureVertex feature = new FeatureVertex(graph, "toilet", "" + node.getId(),
+                                                          node.lon, node.lat, creativeName);
+            }
+            LOG.info("Created {} toilets.", n);
+        }
+
         private void buildBikeParkAndRideAreas() {
             LOG.info("Building bike P+R areas");
             List<AreaGroup> areaGroups = groupAreas(osmdb.getBikeParkingAreas());
@@ -383,7 +414,7 @@ public class OpenStreetMapGraphBuilderImpl implements GraphBuilder {
          * linked to the street network (they are most of the time buildings). We just create a bike
          * P+R in the middle of the area envelope and rely on the same linking mechanism as for
          * nodes to connect them to the nearest streets.
-         * 
+         *
          * @param area
          */
         private void buildBikeParkAndRideForArea(Area area) {
@@ -416,11 +447,11 @@ public class OpenStreetMapGraphBuilderImpl implements GraphBuilder {
             for (AreaGroup group : areaGroups) {
                 walkableAreaBuilder.build(group);
             }
-            
+
             // running a request caches the timezone; we need to clear it now so that when agencies are loaded
             // the graph time zone is set to the agency time zone.
             graph.clearTimeZone();
-            
+
             LOG.info("Done building visibility graphs for walkable areas.");
         }
 
@@ -1023,6 +1054,8 @@ public class OpenStreetMapGraphBuilderImpl implements GraphBuilder {
                                                  OSMWay way, int index, long startNode, long endNode, double length,
                                                  StreetTraversalPermission permissions, LineString geometry, boolean back) {
 
+            // TODO: track OSMWay id on StreetEdge here (add edge ID to StreetEdge)
+            ///////////////////////////////////////////////////////////////////////
             String label = "way " + way.getId() + " from " + index;
             label = unique(label);
             String name = getNameForWay(way, label);

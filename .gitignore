@@ -25,3 +25,4 @@ gen-py/
 .idea/
 .sonar
 _site/
+dependency-reduced-pom.xml

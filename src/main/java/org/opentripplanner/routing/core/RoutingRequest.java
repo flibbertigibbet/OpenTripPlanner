@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A trip planning request. Some parameters may not be honored by the trip planner for some or all itineraries. For example, maxWalkDistance may be
  * relaxed if the alternative is to not provide a route.
- * 
+ *
  * NOTE this is the result of merging what used to be called a REQUEST and a TRAVERSEOPTIONS.
  * The Lombok Getter/Setter annotations serve to create getter and setter methods on all fields,
  * so defaults can be supplied in a PrototypeRoutingRequest bean via Spring.
@@ -59,8 +59,8 @@ public class RoutingRequest implements Cloneable, Serializable {
 
     /**
      * The model that computes turn/traversal costs.
-     * 
-     * TODO(flamholz): this is a weird place to inject this model. We do it here because, for historical reasons, this is 
+     *
+     * TODO(flamholz): this is a weird place to inject this model. We do it here because, for historical reasons, this is
      * the most reasonable place to inject it.
      */
     public IntersectionTraversalCostModel traversalCostModel = new SimpleIntersectionTraversalCostModel();
@@ -137,14 +137,14 @@ public class RoutingRequest implements Cloneable, Serializable {
      * An extra penalty added on transfers (i.e. all boardings except the first one).
      * Not to be confused with bikeBoardCost and walkBoardCost, which are the cost of boarding a
      * vehicle with and without a bicycle. The boardCosts are used to model the 'usual' perceived
-     * cost of using a transit vehicle, and the transferPenalty is used when a user requests even 
-     * less transfers. In the latter case, we don't actually optimize for fewest transfers, as this 
-     * can lead to absurd results. Consider a trip in New York from Grand Army 
-     * Plaza (the one in Brooklyn) to Kalustyan's at noon. The true lowest transfers route is to 
-     * wait until midnight, when the 4 train runs local the whole way. The actual fastest route is 
+     * cost of using a transit vehicle, and the transferPenalty is used when a user requests even
+     * less transfers. In the latter case, we don't actually optimize for fewest transfers, as this
+     * can lead to absurd results. Consider a trip in New York from Grand Army
+     * Plaza (the one in Brooklyn) to Kalustyan's at noon. The true lowest transfers route is to
+     * wait until midnight, when the 4 train runs local the whole way. The actual fastest route is
      * the 2/3 to the 4/5 at Nevins to the 6 at Union Square, which takes half an hour.
-     * Even someone optimizing for fewest transfers doesn't want to wait until midnight. Maybe they 
-     * would be willing to walk to 7th Ave and take the Q to Union Square, then transfer to the 6. 
+     * Even someone optimizing for fewest transfers doesn't want to wait until midnight. Maybe they
+     * would be willing to walk to 7th Ave and take the Q to Union Square, then transfer to the 6.
      * If this takes less than optimize_transfer_penalty seconds, then that's what we'll return.
      */
     public int transferPenalty = 0;
@@ -157,7 +157,7 @@ public class RoutingRequest implements Cloneable, Serializable {
 
     /** Used instead of walk reluctance for stairs */
     public double stairsReluctance = 2.0;
-    
+
     /** Multiplicative factor on expected turning time. */
     public double turnReluctance = 1.0;
 
@@ -243,17 +243,17 @@ public class RoutingRequest implements Cloneable, Serializable {
     public HashMap<AgencyAndId, BannedStopSet> bannedTrips = new HashMap<AgencyAndId, BannedStopSet>();
 
     /** Do not use certain stops. See for more information the bannedStops property in the RoutingResource class. */
-    public StopMatcher bannedStops = StopMatcher.emptyMatcher(); 
-    
+    public StopMatcher bannedStops = StopMatcher.emptyMatcher();
+
     /** Do not use certain stops. See for more information the bannedStopsHard property in the RoutingResource class. */
-    public StopMatcher bannedStopsHard = StopMatcher.emptyMatcher(); 
-    
+    public StopMatcher bannedStopsHard = StopMatcher.emptyMatcher();
+
     /** Set of preferred routes by user. */
     public RouteMatcher preferredRoutes = RouteMatcher.emptyMatcher();
-    
+
     /** Set of preferred agencies by user. */
     public HashSet<String> preferredAgencies = new HashSet<String>();
-    
+
     /**
      * Penalty added for using every route that is not preferred if user set any route as preferred. We return number of seconds that we are willing
      * to wait for preferred route.
@@ -262,7 +262,7 @@ public class RoutingRequest implements Cloneable, Serializable {
 
     /** Set of unpreferred routes for given user. */
     public RouteMatcher unpreferredRoutes = RouteMatcher.emptyMatcher();
-    
+
     /** Set of unpreferred agencies for given user. */
     public HashSet<String> unpreferredAgencies = new HashSet<String>();
 
@@ -287,8 +287,8 @@ public class RoutingRequest implements Cloneable, Serializable {
     public int maxTransfers = 2;
 
     /**
-     * Extensions to the trip planner will require additional traversal options beyond the default 
-     * set. We provide an extension point for adding arbitrary parameters with an 
+     * Extensions to the trip planner will require additional traversal options beyond the default
+     * set. We provide an extension point for adding arbitrary parameters with an
      * extension-specific key.
      */
     public Map<Object, Object> extensions = new HashMap<Object, Object>();
@@ -297,7 +297,7 @@ public class RoutingRequest implements Cloneable, Serializable {
     public int nonpreferredTransferPenalty = 180;
 
     /**
-     * For the bike triangle, how important time is. 
+     * For the bike triangle, how important time is.
      * triangleTimeFactor+triangleSlopeFactor+triangleSafetyFactor == 1
      */
     public double triangleTimeFactor;
@@ -310,6 +310,10 @@ public class RoutingRequest implements Cloneable, Serializable {
 
     /** Options specifically for the case that you are walking a bicycle. */
     public RoutingRequest bikeWalkingOptions;
+
+    /** Feature preferences */
+    public boolean preferBenches = false;
+    public boolean preferToilets = false;
 
     /** This is true when a GraphPath is being traversed in reverse for optimization purposes. */
     public boolean reverseOptimizing = false;
@@ -349,7 +353,7 @@ public class RoutingRequest implements Cloneable, Serializable {
      */
     // 2.9 m/s/s: 0 mph to 65 mph in 10 seconds
     public double carAccelerationSpeed = 2.9;
-    
+
     /**
      * When true, realtime updates are ignored during this search.
      */
@@ -366,7 +370,7 @@ public class RoutingRequest implements Cloneable, Serializable {
      * and just keep a reference to the context in the TraverseOptions, rather than using RoutingContexts for everything because in some testing and
      * graph building situations we need to build a bunch of initial states with different times and vertices from a single TraverseOptions, without
      * setting all the transit context or building temporary vertices (with all the exception-throwing checks that entails).
-     * 
+     *
      * While they are conceptually separate, TraverseOptions does maintain a reference to its accompanying RoutingContext (and vice versa) so that
      * both do not need to be passed/injected separately into tight inner loops within routing algorithms. These references should be set to null when
      * the request scope is torn down -- the routing context becomes irrelevant at that point, since temporary graph elements have been removed and
@@ -376,7 +380,7 @@ public class RoutingRequest implements Cloneable, Serializable {
 
     /** A transit stop that this trip must start from */
     public AgencyAndId startingTransitStopId;
-    
+
     /** A trip where this trip must start from (depart-onboard routing) */
     public AgencyAndId startingTransitTripId;
 
@@ -506,6 +510,16 @@ public class RoutingRequest implements Cloneable, Serializable {
         this.wheelchairAccessible = wheelchairAccessible;
     }
 
+    public void setPreferBenches(boolean benches) {
+        if (benches) LOG.info("Going to prefer benches");
+        this.preferBenches = benches;
+    }
+
+    public void setPreferToilets(boolean toilets) {
+        if (toilets) LOG.info("Going to prefer toilets");
+        this.preferToilets = toilets;
+    }
+
     /**
      * only allow traversal by the specified mode; don't allow walking bikes. This is used during contraction to reduce the number of possible paths.
      */
@@ -536,7 +550,7 @@ public class RoutingRequest implements Cloneable, Serializable {
     public IntersectionTraversalCostModel getIntersectionTraversalCostModel() {
         return traversalCostModel;
     }
-    
+
     /** @return the (soft) maximum walk distance */
     // If transit is not to be used, disable walk limit.
     public double getMaxWalkDistance() {
@@ -546,7 +560,7 @@ public class RoutingRequest implements Cloneable, Serializable {
             return maxWalkDistance;
         }
     }
-    
+
     public void setWalkBoardCost(int walkBoardCost) {
         if (walkBoardCost < 0) {
             this.walkBoardCost = 0;
@@ -555,7 +569,7 @@ public class RoutingRequest implements Cloneable, Serializable {
             this.walkBoardCost = walkBoardCost;
         }
     }
-    
+
     public void setBikeBoardCost(int bikeBoardCost) {
         if (bikeBoardCost < 0) {
             this.bikeBoardCost = 0;
@@ -564,7 +578,7 @@ public class RoutingRequest implements Cloneable, Serializable {
             this.bikeBoardCost = bikeBoardCost;
         }
     }
-    
+
     public void setPreferredAgencies(String s) {
         if (s != null && !s.equals(""))
             preferredAgencies = new HashSet<String>(Arrays.asList(s.split(",")));
@@ -576,17 +590,17 @@ public class RoutingRequest implements Cloneable, Serializable {
         else
             preferredRoutes = RouteMatcher.emptyMatcher();
     }
-    
+
     public void setOtherThanPreferredRoutesPenalty(int penalty) {
         if(penalty < 0) penalty = 0;
         this.otherThanPreferredRoutesPenalty = penalty;
     }
-    
+
     public void setUnpreferredAgencies(String s) {
         if (s != null && !s.equals(""))
             unpreferredAgencies = new HashSet<String>(Arrays.asList(s.split(",")));
     }
-    
+
     public void setUnpreferredRoutes(String s) {
         if (s != null && !s.equals(""))
             unpreferredRoutes = RouteMatcher.parse(s);
@@ -618,7 +632,7 @@ public class RoutingRequest implements Cloneable, Serializable {
             bannedStopsHard = StopMatcher.emptyMatcher();
         }
     }
-    
+
     public void setBannedAgencies(String s) {
         if (s != null && !s.equals(""))
             bannedAgencies = new HashSet<String>(Arrays.asList(s.split(",")));
@@ -631,6 +645,7 @@ public class RoutingRequest implements Cloneable, Serializable {
 
         // TODO Check this: perfect equality between non-transit modes.
         // For partial equality, should we return a smaller similarity score?
+        // @flibbertigibbet:  TODO: anything here required for the added feature params?
         if (modes.getNonTransitSet().equals(options.modes.getNonTransitSet())) {
             s += 1000;
         }
@@ -688,7 +703,7 @@ public class RoutingRequest implements Cloneable, Serializable {
         setDateTime(dateObject);
     }
 
-    public int getNumItineraries() { 
+    public int getNumItineraries() {
         if (modes.isTransit()) {
             return numItineraries;
         } else {
@@ -715,9 +730,16 @@ public class RoutingRequest implements Cloneable, Serializable {
     }
 
     public String toString(String sep) {
-        return from + sep + to + sep + getMaxWalkDistance() + sep + getDateTime() + sep
+        String str = from + sep + to + sep + getMaxWalkDistance() + sep + getDateTime() + sep
                 + arriveBy + sep + optimize + sep + modes.getAsStr() + sep
                 + getNumItineraries();
+        if (preferBenches) {
+            str += " preferBenches";
+        }
+        if (preferToilets) {
+            str += " preferToilets";
+        }
+        return str;
     }
 
     public void removeMode(TraverseMode mode) {
@@ -733,14 +755,14 @@ public class RoutingRequest implements Cloneable, Serializable {
             intermediatePlaces.add(GenericLocation.fromOldStyleString(place));
         }
     }
-    
+
     /** Clears any intermediate places from this request. */
     public void clearIntermediatePlaces() {
         if (this.intermediatePlaces != null) {
             this.intermediatePlaces.clear();
         }
     }
-    
+
     /**
      * Returns true if there are any intermediate places set.
      */
@@ -757,7 +779,7 @@ public class RoutingRequest implements Cloneable, Serializable {
         }
         this.intermediatePlaces.add(location);
     }
-    
+
     /**
      * Returns true if intermediate places are marked ordered, or there is only one of them.
      */
@@ -853,7 +875,7 @@ public class RoutingRequest implements Cloneable, Serializable {
         this.rctx = new RoutingContext(this, graph, from, to);
         this.rctx.originBackEdge = fromBackEdge;
     }
-    
+
     public void setRoutingContext(Graph graph, Vertex from, Vertex to) {
         setRoutingContext(graph, null, from, to);
     }
@@ -908,6 +930,8 @@ public class RoutingRequest implements Cloneable, Serializable {
                 && maxTransfers == other.maxTransfers
                 && modes.equals(other.modes)
                 && wheelchairAccessible == other.wheelchairAccessible
+                && preferBenches == other.preferBenches
+                && preferToilets == other.preferToilets
                 && optimize.equals(other.optimize)
                 && maxWalkDistance == other.maxWalkDistance
                 && maxPreTransitTime == other.maxPreTransitTime
@@ -954,6 +978,9 @@ public class RoutingRequest implements Cloneable, Serializable {
     /**
      * Equality and hashCode should not consider the routing context, to allow SPT caching.
      * When adding fields to the hash code, pick a random large prime number that's not yet in use.
+     *
+     * @flibbertigibbet:  This site may help in finding primes to use:
+     * http://www.bigprimes.net/archive/prime/
      */
     @Override
     public int hashCode() {
@@ -961,6 +988,7 @@ public class RoutingRequest implements Cloneable, Serializable {
                 + new Double(carSpeed).hashCode() + new Double(maxWeight).hashCode()
                 + (int) (worstTime & 0xffffffff) + modes.hashCode()
                 + (arriveBy ? 8966786 : 0) + (wheelchairAccessible ? 731980 : 0)
+                + (preferBenches ? 1300727 : 0) + (preferToilets ? 1301081 :0)
                 + optimize.hashCode() + new Double(maxWalkDistance).hashCode()
                 + new Double(transferPenalty).hashCode() + new Double(maxSlope).hashCode()
                 + new Double(walkReluctance).hashCode() + new Double(waitReluctance).hashCode()
@@ -1052,7 +1080,7 @@ public class RoutingRequest implements Cloneable, Serializable {
             return walkBoardCost;
         return bikeBoardCost;
     }
-    
+
     private String getRouteOrAgencyStr(HashSet<String> strings) {
         StringBuilder builder = new StringBuilder();
         for (String agency : strings) {
@@ -1069,7 +1097,7 @@ public class RoutingRequest implements Cloneable, Serializable {
     public String getPreferredRouteStr() {
         return preferredRoutes.asString();
     }
-    
+
     public String getPreferredAgenciesStr() {
         return getRouteOrAgencyStr(preferredAgencies);
     }
@@ -1077,7 +1105,7 @@ public class RoutingRequest implements Cloneable, Serializable {
     public String getUnpreferredRouteStr() {
         return unpreferredRoutes.asString();
     }
-    
+
     public String getUnpreferredAgenciesStr() {
         return getRouteOrAgencyStr(unpreferredAgencies);
     }
@@ -1089,11 +1117,11 @@ public class RoutingRequest implements Cloneable, Serializable {
     public String getBannedStopsStr() {
         return bannedStops.asString();
     }
-    
+
     public String getBannedStopsHardStr() {
         return bannedStopsHard.asString();
     }
-    
+
     public String getBannedAgenciesStr() {
         return getRouteOrAgencyStr(bannedAgencies);
     }
@@ -1134,10 +1162,10 @@ public class RoutingRequest implements Cloneable, Serializable {
     public void banTrip(AgencyAndId trip) {
         bannedTrips.put(trip, BannedStopSet.ALL);
     }
-    
-    /** 
+
+    /**
      * tripIsBanned is a misnomer: this checks whether the agency or route are banned.
-     * banning of individual trips is actually performed inside the trip search, 
+     * banning of individual trips is actually performed inside the trip search,
      * in TripTimes.tripAcceptable.
      */
     public boolean tripIsBanned(Trip trip) {

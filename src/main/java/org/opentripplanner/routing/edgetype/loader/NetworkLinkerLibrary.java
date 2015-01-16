@@ -29,12 +29,14 @@ import org.opentripplanner.routing.core.TraverseMode;
 import org.opentripplanner.routing.core.TraverseModeSet;
 import org.opentripplanner.routing.edgetype.StreetBikeParkLink;
 import org.opentripplanner.routing.edgetype.StreetBikeRentalLink;
+import org.opentripplanner.routing.edgetype.StreetFeatureLink;
 import org.opentripplanner.routing.edgetype.StreetEdge;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
 import org.opentripplanner.routing.impl.StreetVertexIndexServiceImpl;
 import org.opentripplanner.routing.vertextype.BikeParkVertex;
+import org.opentripplanner.routing.vertextype.FeatureVertex;
 import org.opentripplanner.routing.vertextype.BikeRentalStationVertex;
 import org.opentripplanner.routing.vertextype.StreetVertex;
 import org.opentripplanner.routing.vertextype.TransitStop;
@@ -46,14 +48,14 @@ public class NetworkLinkerLibrary {
 
     private static Logger LOG = LoggerFactory.getLogger(NetworkLinkerLibrary.class);
 
-    /* for each original bundle of (turn)edges making up a street, a list of 
+    /* for each original bundle of (turn)edges making up a street, a list of
        edge pairs that will replace it */
     HashMap<HashSet<StreetEdge>, LinkedList<P2<StreetEdge>>> replacements =
         new HashMap<HashSet<StreetEdge>, LinkedList<P2<StreetEdge>>>();
-    
+
     /* a map to track which vertices were associated with each linked vertex, to avoid repeat splitting */
-    HashMap<Vertex, Collection<StreetVertex>> splitVertices = 
-            new HashMap<Vertex, Collection<StreetVertex>> (); 
+    HashMap<Vertex, Collection<StreetVertex>> splitVertices =
+            new HashMap<Vertex, Collection<StreetVertex>> ();
 
     /* by default traverse options allow walking only, which is what we want */
     RoutingRequest options = new RoutingRequest();
@@ -76,7 +78,7 @@ public class NetworkLinkerLibrary {
 
     /**
      * The entry point for networklinker to link each transit stop.
-     * 
+     *
      * @param v
      * @param wheelchairAccessible
      * @return true if the links were successfully added, otherwise false
@@ -89,7 +91,7 @@ public class NetworkLinkerLibrary {
 
     /**
      * The entry point for networklinker to link each bike rental station.
-     * 
+     *
      * @param v
      */
     public LinkRequest connectVertexToStreets(BikeRentalStationVertex v) {
@@ -105,9 +107,9 @@ public class NetworkLinkerLibrary {
         return request;
     }
 
-   /** 
+   /**
      * The entry point for networklinker to link each bike park.
-     * 
+     *
      * @param v
      */
     public LinkRequest connectVertexToStreets(BikeParkVertex v) {
@@ -117,6 +119,22 @@ public class NetworkLinkerLibrary {
             @Override
             public Collection<? extends Edge> connect(StreetVertex sv, BikeParkVertex v) {
                 return Arrays.asList(new StreetBikeParkLink(sv, v), new StreetBikeParkLink(v, sv));
+            }
+        });
+        return request;
+    }
+
+    /**
+     * The entry point for networklinker to link each feature.
+     *
+     * @param v
+     */
+    public LinkRequest connectVertexToStreets(FeatureVertex v) {
+        LinkRequest request = new LinkRequest(this);
+        request.connectFeatureVertexToStreets(v, new LinkRequest.StreetLinkFactory<FeatureVertex>() {
+            @Override
+            public Collection<? extends Edge> connect(StreetVertex sv, FeatureVertex v) {
+                return Arrays.asList(new StreetFeatureLink(sv, v), new StreetFeatureLink(v, sv));
             }
         });
         return request;

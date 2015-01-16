@@ -192,7 +192,7 @@ public abstract class Vertex implements Serializable, Cloneable {
     public int getDegreeIn() {
         return incoming.length;
     }
-    
+
     /** Get the longitude of the vertex */
     public double getX() {
         return x;
@@ -284,6 +284,26 @@ public abstract class Vertex implements Serializable, Cloneable {
                 continue;
             }
             result.add((StreetEdge) out);
+        }
+        return result;
+    }
+
+    @XmlTransient
+    public List<StreetEdge> getStreetEdges() {
+        Collection<Edge> outgoing = this.getOutgoing();
+        Collection<Edge> incoming = this.getIncoming();
+        List<StreetEdge> result = new ArrayList<StreetEdge>();
+        for (Edge out : outgoing) {
+            if (!(out instanceof StreetEdge)) {
+                continue;
+            }
+            result.add((StreetEdge) out);
+        }
+        for (Edge in : incoming) {
+            if (!(in instanceof StreetEdge)) {
+                continue;
+            }
+            result.add((StreetEdge) in);
         }
         return result;
     }
