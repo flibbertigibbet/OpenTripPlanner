@@ -217,6 +217,8 @@ public class OpenStreetMapGraphBuilderImpl implements GraphBuilder {
 
         private static final String nodeLabelFormat = "osm:node:%d";
 
+        private static final String wayLabelFormat = "osm:way:%d";
+
         private static final String levelnodeLabelFormat = nodeLabelFormat + ":level:%s";
 
         private Graph graph;
@@ -984,6 +986,10 @@ public class OpenStreetMapGraphBuilderImpl implements GraphBuilder {
             return String.format(nodeLabelFormat, node.getId());
         }
 
+        private String getWayLabel(OSMWay way) {
+            return String.format(wayLabelFormat, way.getId());
+        }
+
         private String getLevelNodeLabel(OSMNode node, OSMLevel level) {
             return String.format(levelnodeLabelFormat, node.getId(), level.shortName);
         }
@@ -1054,8 +1060,6 @@ public class OpenStreetMapGraphBuilderImpl implements GraphBuilder {
                                                  OSMWay way, int index, long startNode, long endNode, double length,
                                                  StreetTraversalPermission permissions, LineString geometry, boolean back) {
 
-            // TODO: track OSMWay id on StreetEdge here (add edge ID to StreetEdge)
-            ///////////////////////////////////////////////////////////////////////
             String label = "way " + way.getId() + " from " + index;
             label = unique(label);
             String name = getNameForWay(way, label);
@@ -1069,7 +1073,7 @@ public class OpenStreetMapGraphBuilderImpl implements GraphBuilder {
             float carSpeed = wayPropertySet.getCarSpeedForWay(way, back);
 
             StreetEdge street = edgeFactory.createEdge(start, end, geometry, name, length,
-                    permissions, back);
+                    permissions, back, getWayLabel(way));
             street.setCarSpeed(carSpeed);
 
             String highway = way.getTag("highway");

@@ -92,6 +92,8 @@ public class WalkableAreaBuilder {
 
     private StreetEdgeFactory edgeFactory;
 
+    private static final String areaLabelFormat = "osm:area:%d";
+
     // This is an awful hack, but this class (WalkableAreaBuilder) ought to be rewritten.
     private Handler __handler;
 
@@ -385,7 +387,7 @@ public class WalkableAreaBuilder {
             String name = __handler.getNameForWay(areaEntity, label);
 
             AreaEdge street = edgeFactory.createAreaEdge(startEndpoint, endEndpoint, line, name,
-                    length, areaPermissions, false, edgeList);
+                    length, areaPermissions, false, edgeList, getAreaLabel(areaEntity));
             street.setCarSpeed(carSpeed);
 
             if (!areaEntity.hasTag("name") && !areaEntity.hasTag("ref")) {
@@ -404,7 +406,8 @@ public class WalkableAreaBuilder {
             name = __handler.getNameForWay(areaEntity, label);
 
             AreaEdge backStreet = edgeFactory.createAreaEdge(endEndpoint, startEndpoint,
-                    (LineString) line.reverse(), name, length, areaPermissions, true, edgeList);
+                    (LineString) line.reverse(), name, length, areaPermissions, true,
+                    edgeList, getAreaLabel(areaEntity));
             backStreet.setCarSpeed(carSpeed);
 
             if (!areaEntity.hasTag("name") && !areaEntity.hasTag("ref")) {
@@ -594,5 +597,9 @@ public class WalkableAreaBuilder {
             nodes.set(i, nodes.get(opposite));
             nodes.set(opposite, tmp);
         }
+    }
+
+    private String getAreaLabel(OSMWithTags areaEntity) {
+        return String.format(areaLabelFormat, areaEntity.getId());
     }
 }

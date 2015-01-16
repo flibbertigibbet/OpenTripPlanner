@@ -26,6 +26,24 @@ public class DefaultStreetEdgeFactory implements StreetEdgeFactory {
 
     public boolean useElevationData = false;
 
+    // TODO: override methods without duplicating code
+
+    @Override
+    public StreetEdge createEdge(IntersectionVertex startEndpoint, IntersectionVertex endEndpoint,
+            LineString geometry, String name, double length, StreetTraversalPermission permissions,
+            boolean back, String osmId) {
+        StreetEdge pse;
+        if (useElevationData) {
+            pse = new StreetWithElevationEdge(startEndpoint, endEndpoint, geometry, name, length,
+                    permissions, back, osmId);
+        } else {
+            pse = new StreetEdge(startEndpoint, endEndpoint, geometry, name, length, permissions,
+                    back, osmId);
+        }
+        return pse;
+    }
+
+    /* Without OSM Way ID */
     @Override
     public StreetEdge createEdge(IntersectionVertex startEndpoint, IntersectionVertex endEndpoint,
             LineString geometry, String name, double length, StreetTraversalPermission permissions,
@@ -41,6 +59,17 @@ public class DefaultStreetEdgeFactory implements StreetEdgeFactory {
         return pse;
     }
 
+    @Override
+    public AreaEdge createAreaEdge(IntersectionVertex startEndpoint,
+            IntersectionVertex endEndpoint, LineString geometry, String name, double length,
+            StreetTraversalPermission permissions, boolean back, AreaEdgeList area, String osmId) {
+        // By default AreaEdge are elevation-capable so nothing to do.
+        AreaEdge ae = new AreaEdge(startEndpoint, endEndpoint, geometry, name, length, permissions,
+                back, area, osmId);
+        return ae;
+    }
+
+    /* Without OSM Way ID */
     @Override
     public AreaEdge createAreaEdge(IntersectionVertex startEndpoint,
             IntersectionVertex endEndpoint, LineString geometry, String name, double length,
