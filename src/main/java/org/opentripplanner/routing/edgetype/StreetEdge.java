@@ -581,7 +581,7 @@ public class StreetEdge extends Edge implements Cloneable {
     public StreetEdge clone() {
         try {
             StreetEdge clone = (StreetEdge) super.clone();
-            // add fields specifing to StreetEdge
+            // add fields specific to StreetEdge
             // TODO: why aren't the other, pre-existing fields being added here?
             clone.osmId = this.osmId;
             clone.benchCount = this.benchCount;
