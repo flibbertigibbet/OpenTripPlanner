@@ -30,12 +30,22 @@ import com.vividsolutions.jts.geom.LineString;
  */
 public interface StreetEdgeFactory {
 
+    /* Construct without OSM Way ID */
     public StreetEdge createEdge(IntersectionVertex startEndpoint, IntersectionVertex endEndpoint,
             LineString geometry, String name, double length, StreetTraversalPermission permissions,
             boolean back);
 
+    public StreetEdge createEdge(IntersectionVertex startEndpoint, IntersectionVertex endEndpoint,
+            LineString geometry, String name, double length, StreetTraversalPermission permissions,
+            boolean back, String osmId);
+
+    /* Construct without OSM Way ID */
     public AreaEdge createAreaEdge(IntersectionVertex startEndpoint,
             IntersectionVertex endEndpoint, LineString geometry, String name, double length,
             StreetTraversalPermission permissions, boolean back, AreaEdgeList area);
+
+    public AreaEdge createAreaEdge(IntersectionVertex startEndpoint,
+            IntersectionVertex endEndpoint, LineString geometry, String name, double length,
+            StreetTraversalPermission permissions, boolean back, AreaEdgeList area, String osmId);
 
 }

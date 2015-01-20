@@ -22,6 +22,7 @@ public class AreaEdge extends StreetWithElevationEdge {
     private static final long serialVersionUID = 6761687673982054612L;
     private AreaEdgeList area;
 
+    /* Construct without OSM Way ID */
     public AreaEdge(IntersectionVertex startEndpoint, IntersectionVertex endEndpoint,
             LineString geometry, String name, double length, StreetTraversalPermission permissions,
             boolean back, AreaEdgeList area) {
@@ -30,10 +31,18 @@ public class AreaEdge extends StreetWithElevationEdge {
         area.addEdge(this);
     }
 
+    public AreaEdge(IntersectionVertex startEndpoint, IntersectionVertex endEndpoint,
+            LineString geometry, String name, double length, StreetTraversalPermission permissions,
+            boolean back, AreaEdgeList area, String osmId) {
+        super(startEndpoint, endEndpoint, geometry, name, length, permissions, back, osmId);
+        this.area = area;
+        area.addEdge(this);
+    }
+
     public AreaEdgeList getArea() {
         return area;
     }
-    
+
     public int detach(Graph graph) {
         area.removeEdge(this);
         return super.detach(graph);

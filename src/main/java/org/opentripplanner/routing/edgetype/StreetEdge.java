@@ -103,6 +103,9 @@ public class StreetEdge extends Edge implements Cloneable {
 
     private String name;
 
+    /* osm:way:<id> label of OpenStreetMap way ID that this segment lies along */
+    private String osmId;
+
     private StreetTraversalPermission permission;
 
     private int streetClass = CLASS_OTHERPATH;
@@ -122,9 +125,16 @@ public class StreetEdge extends Edge implements Cloneable {
     /** The angle at the start of the edge geometry. Internal representation like that of inAngle. */
     private byte outAngle;
 
+    /* Construct an edge without an OSM ID */
     public StreetEdge(StreetVertex v1, StreetVertex v2, LineString geometry,
-                      String name, double length,
-                      StreetTraversalPermission permission, boolean back) {
+                      String name, double length, StreetTraversalPermission permission,
+                      boolean back) {
+        this(v1, v2, geometry, name, length, permission, back, "");
+    }
+
+    public StreetEdge(StreetVertex v1, StreetVertex v2, LineString geometry,
+                      String name, double length, StreetTraversalPermission permission,
+                      boolean back, String osmId) {
         super(v1, v2);
         this.setBack(back);
         this.setGeometry(geometry);
@@ -132,6 +142,7 @@ public class StreetEdge extends Edge implements Cloneable {
         this.bicycleSafetyFactor = 1.0f;
         this.name = name;
         this.setPermission(permission);
+        this.osmId = osmId;
         this.setCarSpeed(DEFAULT_CAR_SPEED);
         this.setWheelchairAccessible(true); // accessible by default
         if (geometry != null) {
@@ -159,6 +170,9 @@ public class StreetEdge extends Edge implements Cloneable {
                 inAngle = 0;
                 outAngle = 0;
             }
+        }
+        if (osmId.isEmpty()) {
+            LOG.warn("Creating StreetEdge {} without an OSM ID!", name);
         }
     }
 
@@ -549,20 +563,30 @@ public class StreetEdge extends Edge implements Cloneable {
         return bicycleSafetyFactor;
     }
 
+    public String getOsmId() {
+        return osmId;
+    }
+
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
     }
 
     public String toString() {
-        return "PlainStreetEdge(" + getId() + ", " + name + ", " + fromv + " -> " + tov
-                + " length=" + this.getDistance() + " benches=" + benchCount
+        return "PlainStreetEdge(" + getId() + ", " + name + ", " + getOsmId() + ", "
+                + fromv + " -> " + tov + " length=" + this.getDistance() + " benches=" + benchCount
                 + " toilets=" + toiletCount + " permission=" + this.getPermission() + ")";
     }
 
     @Override
     public StreetEdge clone() {
         try {
-            return (StreetEdge) super.clone();
+            StreetEdge clone = (StreetEdge) super.clone();
+            // add fields specific to StreetEdge
+            // TODO: why aren't the other, pre-existing fields being added here?
+            clone.osmId = this.osmId;
+            clone.benchCount = this.benchCount;
+            clone.toiletCount = this.toiletCount;
+            return clone;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e);
         }

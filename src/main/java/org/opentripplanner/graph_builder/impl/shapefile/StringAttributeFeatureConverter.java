@@ -28,10 +28,6 @@ public class StringAttributeFeatureConverter extends AttributeFeatureConverter<S
 
     private String _defaultValue;
 
-    public StringAttributeFeatureConverter() {
-
-    }
-
     public StringAttributeFeatureConverter(String attributeName, String defaultValue) {
         super(attributeName);
         _defaultValue = defaultValue;
@@ -40,6 +36,10 @@ public class StringAttributeFeatureConverter extends AttributeFeatureConverter<S
     public StringAttributeFeatureConverter(String attributeName) {
         super(attributeName);
         _defaultValue = null;
+    }
+
+    public StringAttributeFeatureConverter() {
+
     }
 
     /**

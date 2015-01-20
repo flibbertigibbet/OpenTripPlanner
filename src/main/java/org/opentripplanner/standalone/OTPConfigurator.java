@@ -32,6 +32,11 @@ import org.opentripplanner.graph_builder.impl.ned.ElevationGraphBuilderImpl;
 import org.opentripplanner.graph_builder.impl.ned.NEDGridCoverageFactoryImpl;
 import org.opentripplanner.graph_builder.impl.osm.DefaultWayPropertySetSource;
 import org.opentripplanner.graph_builder.impl.osm.OpenStreetMapGraphBuilderImpl;
+////////////////////////////////////////
+import org.opentripplanner.graph_builder.impl.shapefile.NihShapefileStreetGraphBuilderImpl;
+import org.opentripplanner.graph_builder.impl.shapefile.ShapefileFeatureSourceFactoryImpl;
+import org.opentripplanner.graph_builder.impl.shapefile.ShapefileStreetSchema;
+////////////////////////////////////////
 import org.opentripplanner.graph_builder.model.GtfsBundle;
 import org.opentripplanner.graph_builder.services.DefaultStreetEdgeFactory;
 import org.opentripplanner.graph_builder.services.GraphBuilder;
@@ -127,6 +132,7 @@ public class OTPConfigurator {
         GraphBuilderTask graphBuilder = new GraphBuilderTask();
         List<File> gtfsFiles = Lists.newArrayList();
         List<File> osmFiles =  Lists.newArrayList();
+        List<File> shapeFiles = Lists.newArrayList();
         File configFile = null;
         /* For now this is adding files from all directories listed, rather than building multiple graphs. */
         for (File dir : params.build) {
@@ -146,6 +152,10 @@ public class OTPConfigurator {
                     LOG.info("Found OSM file {}", file);
                     osmFiles.add(file);
                     break;
+                case SHAPEFILE:
+                    LOG.info("Fount SHAPEFILE {}", file);
+                    shapeFiles.add(file);
+                    break;
                 case CONFIG:
                     if (!params.noEmbedConfig) {
                         LOG.info("Found CONFIG file {}", file);
@@ -159,6 +169,7 @@ public class OTPConfigurator {
         }
         boolean hasOSM  = ! (osmFiles.isEmpty()  || params.noStreets);
         boolean hasGTFS = ! (gtfsFiles.isEmpty() || params.noTransit);
+        boolean hasShapefiles = ! (shapeFiles.isEmpty());
         if ( ! (hasOSM || hasGTFS )) {
             LOG.error("Found no input files from which to build a graph in {}", params.build.toString());
             return null;
@@ -179,6 +190,20 @@ public class OTPConfigurator {
             graphBuilder.addGraphBuilder(osmBuilder);
             graphBuilder.addGraphBuilder(new TransitToStreetNetworkGraphBuilderImpl());
             graphBuilder.addGraphBuilder(new PruneFloatingIslands());
+            if (hasShapefiles) {
+                // build NIH shapefiles
+                // List<ShapefileFeatureSourceFactoryImpl> shapefileProviders = Lists.newArrayList();
+                // TODO: can only have one at a time; will need to use shapefile join class to also load intersections,
+                // or add secondary shapefile loader for the intersection data.
+                ShapefileFeatureSourceFactoryImpl shapefileFeatureSourceFactory = null;
+                for (File shapefile : shapeFiles) {
+                    LOG.info("Going to build with shapefile {}", shapefile);
+                    shapefileFeatureSourceFactory = new ShapefileFeatureSourceFactoryImpl(shapefile);
+                }
+                NihShapefileStreetGraphBuilderImpl shapefileBuilder = new NihShapefileStreetGraphBuilderImpl();
+                shapefileBuilder.setFeatureSourceFactory(shapefileFeatureSourceFactory);
+                graphBuilder.addGraphBuilder(shapefileBuilder);
+            }
         }
         if ( hasGTFS ) {
             List<GtfsBundle> gtfsBundles = Lists.newArrayList();
@@ -247,7 +272,7 @@ public class OTPConfigurator {
      * Represents the different types of input files for a graph build.
      */
     private static enum InputFileType {
-        GTFS, OSM, CONFIG, OTHER;
+        GTFS, OSM, CONFIG, SHAPEFILE, OTHER;
         public static InputFileType forFile(File file) {
             String name = file.getName();
             if (name.endsWith(".zip")) {
@@ -261,6 +286,7 @@ public class OTPConfigurator {
             if (name.endsWith(".pbf")) return OSM;
             if (name.endsWith(".osm")) return OSM;
             if (name.endsWith(".osm.xml")) return OSM;
+            if (name.endsWith(".shp")) return SHAPEFILE;
             if (name.equals("Embed.properties")) return CONFIG;
             return OTHER;
         }

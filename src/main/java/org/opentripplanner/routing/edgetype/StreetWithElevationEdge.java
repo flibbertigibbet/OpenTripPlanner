@@ -40,9 +40,15 @@ public class StreetWithElevationEdge extends StreetEdge {
 
     private boolean flattened;
 
+    /* Create without OSM Way ID */
     public StreetWithElevationEdge(StreetVertex v1, StreetVertex v2, LineString geometry,
             String name, double length, StreetTraversalPermission permission, boolean back) {
-        super(v1, v2, geometry, name, length, permission, back);
+        this(v1, v2, geometry, name, length, permission, back, "");
+    }
+
+    public StreetWithElevationEdge(StreetVertex v1, StreetVertex v2, LineString geometry,
+            String name, double length, StreetTraversalPermission permission, boolean back, String osmId) {
+        super(v1, v2, geometry, name, length, permission, back, osmId);
     }
 
     @Override
@@ -98,9 +104,9 @@ public class StreetWithElevationEdge extends StreetEdge {
 
     @Override
     public String toString() {
-        return "StreetWithElevationEdge(" + getId() + ", " + getName() + ", " + fromv + " -> "
-                + tov + " length=" + this.getDistance() + " benches=" + this.getBenchCount()
-                + " toilets=" + this.getToiletCount()
+        return "StreetWithElevationEdge(" + getId() + ", " + getOsmId() + ", " + getName()
+                + ", " + fromv + " -> " + tov + " length=" + this.getDistance()
+                + " benches=" + this.getBenchCount() + " toilets=" + this.getToiletCount()
                 + " permission=" + this.getPermission() + ")";
     }
 }
