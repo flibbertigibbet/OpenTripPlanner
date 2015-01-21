@@ -90,7 +90,7 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
     }
 
     public void buildGraph(Graph graph, HashMap<Class<?>, Object> extra) {
-        LOG.info("Adding to graph data from NIH Shapefile...");
+        LOG.info("Adding to graph data from NIH Streets Shapefile...");
 
         FeatureSource<SimpleFeatureType, SimpleFeature> featureSource = _featureSourceFactory
                 .getFeatureSource();
@@ -133,10 +133,10 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
         it2.close();
         it2 = null;
 
-        LOG.info("Have {} NIH features to process...", featureList.size());
+        LOG.info("Have {} NIH streets to process...", featureList.size());
 
         // index edges and nodes in graph built from OSM data by their OSM IDs
-        LOG.info("Indexing OSM nodes and ways by ID...");
+        LOG.info("Indexing OSM ways by ID...");
         Multimap<String, StreetEdge> edgesByWayId = HashMultimap.create();
         Collection<Edge> edges = graph.getEdges();
         for (Edge edge: edges) {

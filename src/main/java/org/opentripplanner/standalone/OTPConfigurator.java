@@ -33,6 +33,7 @@ import org.opentripplanner.graph_builder.impl.ned.NEDGridCoverageFactoryImpl;
 import org.opentripplanner.graph_builder.impl.osm.DefaultWayPropertySetSource;
 import org.opentripplanner.graph_builder.impl.osm.OpenStreetMapGraphBuilderImpl;
 ////////////////////////////////////////
+import org.opentripplanner.graph_builder.impl.shapefile.NihShapefileIntersectionGraphBuilderImpl;
 import org.opentripplanner.graph_builder.impl.shapefile.NihShapefileStreetGraphBuilderImpl;
 import org.opentripplanner.graph_builder.impl.shapefile.ShapefileFeatureSourceFactoryImpl;
 import org.opentripplanner.graph_builder.impl.shapefile.ShapefileStreetSchema;
@@ -191,18 +192,30 @@ public class OTPConfigurator {
             graphBuilder.addGraphBuilder(new TransitToStreetNetworkGraphBuilderImpl());
             graphBuilder.addGraphBuilder(new PruneFloatingIslands());
             if (hasShapefiles) {
-                // build NIH shapefiles
-                // List<ShapefileFeatureSourceFactoryImpl> shapefileProviders = Lists.newArrayList();
-                // TODO: can only have one at a time; will need to use shapefile join class to also load intersections,
-                // or add secondary shapefile loader for the intersection data.
-                ShapefileFeatureSourceFactoryImpl shapefileFeatureSourceFactory = null;
+                // build NIH shapefiles; should have two:  one with streets, and one with intersections
+                ShapefileFeatureSourceFactoryImpl shapefileStreetFeatureSourceFactory = null;
+                ShapefileFeatureSourceFactoryImpl shapefileIntersectionFeatureSourceFactory = null;
                 for (File shapefile : shapeFiles) {
-                    LOG.info("Going to build with shapefile {}", shapefile);
-                    shapefileFeatureSourceFactory = new ShapefileFeatureSourceFactoryImpl(shapefile);
+                    String fileName = shapefile.getName();
+                    if (fileName.equals("segments.shp")) {
+                        LOG.info("Going to build with NIH street shapefile {}", shapefile);
+                        shapefileStreetFeatureSourceFactory = new ShapefileFeatureSourceFactoryImpl(shapefile);
+                        NihShapefileStreetGraphBuilderImpl shapefileStreetBuilder = new NihShapefileStreetGraphBuilderImpl();
+                        shapefileStreetBuilder.setFeatureSourceFactory(shapefileStreetFeatureSourceFactory);
+                        graphBuilder.addGraphBuilder(shapefileStreetBuilder);
+                    } else if (fileName.equals("intersections.shp")) {
+                        LOG.info("Going to build with NIH intersection shapefile {}", shapefile);
+                        shapefileIntersectionFeatureSourceFactory = new ShapefileFeatureSourceFactoryImpl(shapefile);
+                        NihShapefileIntersectionGraphBuilderImpl shapefileIntersectionBuilder =
+                                new NihShapefileIntersectionGraphBuilderImpl();
+                        shapefileIntersectionBuilder.setFeatureSourceFactory(shapefileIntersectionFeatureSourceFactory);
+                        graphBuilder.addGraphBuilder(shapefileIntersectionBuilder);
+                    } else {
+                        LOG.warn("Found shapefile {} that does not look like an NIH shapefile; skipping it.", fileName);
+                    }
+
                 }
-                NihShapefileStreetGraphBuilderImpl shapefileBuilder = new NihShapefileStreetGraphBuilderImpl();
-                shapefileBuilder.setFeatureSourceFactory(shapefileFeatureSourceFactory);
-                graphBuilder.addGraphBuilder(shapefileBuilder);
+
             }
         }
         if ( hasGTFS ) {
