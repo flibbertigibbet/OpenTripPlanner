@@ -21,33 +21,27 @@ import org.geotools.data.Query;
 import org.geotools.factory.Hints;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
-import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.ReferencingFactoryFinder;
-import org.joda.time.DateTime;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.crs.CRSAuthorityFactory;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opentripplanner.common.geometry.GeometryUtils;
-import org.opentripplanner.common.model.P2;
-import org.opentripplanner.graph_builder.impl.shapefile.AttributeFeatureConverter;
-import org.opentripplanner.graph_builder.impl.shapefile.StringAttributeFeatureConverter;
+import org.opentripplanner.common.model.extras.OptionSet;
+import org.opentripplanner.common.model.extras.nihOptions.NihOption;
 import org.opentripplanner.graph_builder.services.GraphBuilder;
 import org.opentripplanner.graph_builder.services.shapefile.FeatureSourceFactory;
 import org.opentripplanner.graph_builder.services.shapefile.SimpleFeatureConverter;
-import org.opentripplanner.routing.alertpatch.Alert;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.core.TraverseMode;
 import org.opentripplanner.routing.core.TraverseModeSet;
 import org.opentripplanner.routing.edgetype.StreetEdge;
-import org.opentripplanner.routing.edgetype.StreetTraversalPermission;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
 import org.opentripplanner.routing.impl.*;
 import org.opentripplanner.routing.services.GraphService;
 import org.opentripplanner.routing.services.PathService;
-import org.opentripplanner.routing.services.notes.StreetNotesService;
 import org.opentripplanner.routing.spt.GraphPath;
 import org.opentripplanner.routing.vertextype.StreetVertex;
 import org.slf4j.Logger;
@@ -60,8 +54,6 @@ import com.vividsolutions.jts.geom.MultiLineString;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 /**
  * Loads an NIH shapefile into an edge-based graph, associating the edges with those previously
@@ -69,7 +61,14 @@ import com.google.common.collect.Sets;
  *
  */
 public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
+
     private static Logger LOG = LoggerFactory.getLogger(ShapefileStreetGraphBuilderImpl.class);
+
+    // collection of option fields expected in NIH segments shapefile
+    private static final Set<NihOption> NIH_OPTIONS = EnumSet.allOf(NihOption.class);
+
+    // converters for the option fields expected in NIH segments shapefile (have two if they are for L/R sides)
+    private EnumMap<NihOption, ArrayList<StringAttributeFeatureConverter>> optionConverters;
 
     private FeatureSourceFactory _featureSourceFactory;
 
@@ -118,11 +117,14 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
             _featureSourceFactory.cleanup();
         }
 
-        // TODO: get rest of properties
+        // get identifier fields
         StreetVertexIndexServiceImpl vertexSvc = new StreetVertexIndexServiceImpl(graph);
         SimpleFeatureConverter<Long> osmIdSelector = new AttributeFeatureConverter("osm_id");
         SimpleFeatureConverter<Integer> segmentIdSelector = new AttributeFeatureConverter("segment_id");
         StringAttributeFeatureConverter nameSelector = new StringAttributeFeatureConverter("name", "");
+
+        // set up the field converters
+        optionConverters = getFieldConverters();
 
         List<SimpleFeature> featureList = new ArrayList();
         FeatureIterator<SimpleFeature> it2 = features.features();
@@ -223,10 +225,15 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
                 continue;
             }
 
+            String startLabel = startIntersection.getLabel();
+            String endLabel = endIntersection.getLabel();
+
             // find edges between start and end vertices
 
-            // set of matched edges on way between start and end intersections
-            Set<StreetEdge> matchedEdges = new HashSet();
+            // Sets of matched edges on way between start and end intersections.
+            // Right edges go from starting intersection to end; left edges run in reverse direction.
+            Set<StreetEdge> rightEdges = new HashSet();
+            Set<StreetEdge> leftEdges = new HashSet();
 
             // start with the already imported edges with the given OSM Way ID
             Collection<StreetEdge> wayEdges = edgesByWayId.get(wayLabel);
@@ -249,21 +256,21 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
                 String fromLabel = from.getLabel();
                 String toLabel = to.getLabel();
 
-                if (fromLabel.equals(startIntersection.getLabel())) {
+                if (fromLabel.equals(startLabel)) {
                     foundStart = true;
                     startEdges.add(edge);
                     farStartVertices.add(to);
-                } else if (toLabel.equals(startIntersection.getLabel())) {
+                } else if (toLabel.equals(startLabel)) {
                     foundStart = true;
                     startEdges.add(edge);
                     farStartVertices.add(from);
                 }
 
-                if (fromLabel.equals(endIntersection.getLabel())) {
+                if (fromLabel.equals(endLabel)) {
                     foundEnd = true;
                     endEdges.add(edge);
                     farEndVertices.add(to);
-                } else if (toLabel.equals(endIntersection.getLabel())) {
+                } else if (toLabel.equals(endLabel)) {
                     foundEnd = true;
                     endEdges.add(edge);
                     farEndVertices.add(from);
@@ -282,7 +289,11 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
                 for (StreetEdge end : endEdges) {
                     if (start.isEquivalentTo(end)) {
                         haveOneSegment = true;
-                        matchedEdges.add(start);
+                        if (start.getFromVertex().getLabel().equals(startLabel)) {
+                            rightEdges.add(start);
+                        } else {
+                            leftEdges.add(start);
+                        }
                     }
                 }
             }
@@ -304,23 +315,51 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
                     // have two segments
                     LOG.info("Start and end vertex share a midpoint at {}", sharedVertex);
                     // go grab only edges that go between shared vertex and start or end edge
-                    List<StreetEdge> candidates = new ArrayList<>();
-                    candidates.addAll(startEdges);
-                    candidates.addAll(endEdges);
-                    for (StreetEdge edge: candidates) {
-                        if (edge.getFromVertex().getLabel().equals(sharedVertex) ||
-                                edge.getToVertex().getLabel().equals(sharedVertex)) {
+                    for (StreetEdge edge: startEdges) {
+                        if (edge.getToVertex().getLabel().equals(sharedVertex)) {
+                            rightEdges.add(edge);
+                        } else if (edge.getFromVertex().getLabel().equals(sharedVertex)) {
+                            leftEdges.add(edge);
+                        }
+                    }
 
-                            matchedEdges.add(edge);
+                    for (StreetEdge edge: endEdges) {
+                        if (edge.getFromVertex().getLabel().equals(sharedVertex)) {
+                            rightEdges.add(edge);
+                        } else if (edge.getToVertex().getLabel().equals(sharedVertex)) {
+                            leftEdges.add(edge);
                         }
                     }
                 } else {
                     // have three or more segments between start and end; go compute SPT and traverse it
-                    matchedEdges = findSPT(graph, startIntersection.getLabel(), endIntersection.getLabel(), wayLabel, wayEdges);
+                    rightEdges = findSPT(graph, startLabel, endLabel, wayLabel);
+
+                    // find left edges that go in reverse of the SPT path edges
+                    for (StreetEdge street : rightEdges) {
+                        // TODO: surely there's an easier way to find the back edge.
+                        boolean foundReverse = false;
+                        for (Edge reverse : wayEdges) {
+                            if (reverse.isReverseOf(street)) {
+                                foundReverse = true;
+                                leftEdges.add((StreetEdge) reverse);
+                            }
+                        }
+                        if (!foundReverse) {
+                            LOG.warn("No reverse found for matched SPT edge {}: {}", street.getName(), street.getOsmId());
+                        }
+                    }
+
                 }
             }
 
-            // sanity check
+            // sanity checks
+            if (rightEdges.size() != leftEdges.size()) {
+                LOG.warn("Have {} right edges, but {} left edges!", rightEdges.size(), leftEdges.size());
+            }
+
+            Set<StreetEdge> matchedEdges = new HashSet();
+            matchedEdges.addAll(rightEdges);
+            matchedEdges.addAll(leftEdges);
             LOG.info("Have {} matched street edges for way {}.", matchedEdges.size(), wayLabel + " " + wayName);
             boolean isBad = false;
             for (StreetEdge edge : matchedEdges) {
@@ -339,7 +378,9 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
             // Now go set properties on them.
             ///////////////////////////////////////////////////////////////////////
 
-            // TODO: Set edge properties
+            setProperties(feature, rightEdges, true);
+            setProperties(feature, leftEdges, false);
+
         }
 
         LOG.info("Found {} start and {} end intersections.", foundStartCt, foundEndCt);
@@ -349,10 +390,106 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
         }
     }
 
+    /**
+     * Build out the attribute converters to get field values out of the feature.
+     *
+     * @return Map of field enumeration value to list of one or two feature converters (if separate columns for L and R)
+     */
+    private EnumMap<NihOption, ArrayList<StringAttributeFeatureConverter>> getFieldConverters() {
+        // if have R/L columns, have list [R, L]
+        EnumMap<NihOption, ArrayList<StringAttributeFeatureConverter>> converters = new EnumMap(NihOption.class);
+
+        final String LEFT_PREFIX = "L_";
+        final String RIGHT_PREFIX = "R_";
+
+        for (NihOption option : NIH_OPTIONS) {
+            ArrayList<StringAttributeFeatureConverter> fields = new ArrayList();
+            if (option.hasLeftRight()) {
+
+                if (option.equals(NihOption.TRAFFIC)) {
+                    continue; // TODO: will this field go into the shapefile eventually? skip it for now.
+                }
+
+                // make two converters, one for each side
+                fields.add(new StringAttributeFeatureConverter(RIGHT_PREFIX + option.getFieldName(), ""));
+                fields.add(new StringAttributeFeatureConverter(LEFT_PREFIX + option.getFieldName(), ""));
+            } else {
+                fields.add(new StringAttributeFeatureConverter(option.getFieldName(), ""));
+            }
+            converters.put(option, fields);
+        }
+
+        return converters;
+    }
+
+    /**
+     * Set the attributes for this feature on the matching graph edges found.
+     *
+     * @param feature Shapefile SimpleFeature with the properties to set
+     * @param edges Set of graph edges identified as belonging to the segment for this feature
+     * @param isRightSide Whether the graph edges set is for the right side of the street (left side if false)
+     */
+    private void setProperties(SimpleFeature feature, Set<StreetEdge> edges, boolean isRightSide) {
+
+        if (isRightSide) {
+            LOG.info("Going to set properties on right edges...");
+        } else {
+            LOG.info("Going to set properties on left edges...");
+        }
+
+        // build set of converted values
+        OptionSet<NihOption> nihOptions = new OptionSet(NihOption.class);
+
+        for (NihOption option : NIH_OPTIONS) {
+            String val = "";
+
+            if (option.equals(NihOption.TRAFFIC)) {
+                // TODO: will this column be added to the shapefile?
+                continue;
+            }
+
+            if (!option.hasLeftRight() || isRightSide) {
+                val = optionConverters.get(option).get(0).convert(feature);
+            } else {
+                // left side is second in list
+                val = optionConverters.get(option).get(1).convert(feature);
+            }
+
+            if (val.isEmpty()) {
+                LOG.warn("Skipping setting an empty value for option {}.  Was this intentional?", option.getFieldName());
+            } else {
+
+                // TODO: some better way to correct for left/right values encoded in a single column?
+                if (val.equals("Right")) {
+                    if (isRightSide) {
+                        val = "Both";
+                    } else {
+                        val = "None";
+                    }
+                } else if (val.equals("Left")) {
+                    if (!isRightSide) {
+                        val = "Both";
+                    } else {
+                        val = "None";
+                    }
+                }
+
+                LOG.info("Going to set value {} for option {}", val, option.getFieldName());
+                nihOptions.setValue(option, val);
+            }
+        }
+
+        LOG.info("Built option set: {}", nihOptions.toString());
+
+        for (StreetEdge edge : edges) {
+            edge.setExtras(nihOptions);
+        }
+    }
+
     /*
      * Compute SPT for given start and end points, then traverse it to find edges along its way.
      */
-    private Set<StreetEdge> findSPT(Graph graph, String from, String to, String wayLabel, Collection<StreetEdge> wayEdges) {
+    private Set<StreetEdge> findSPT(Graph graph, String from, String to, String wayLabel) {
         // There are three or more edges between the start and end points.
         // Get SPT path from start to end intersections and traverse it.
         Set<StreetEdge> matchedEdges = new HashSet();
@@ -380,20 +517,6 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
                         goodPath = false;
                     } else {
                         matchedEdges.add(street);
-
-                        // TODO: surely there's an easier way to find the back edge.
-                        // add reverse of this edge
-                        boolean foundReverse = false;
-                        for (Edge reverse : wayEdges) {
-                            if (reverse.isReverseOf(street)) {
-                                foundReverse = true;
-                                matchedEdges.add((StreetEdge) reverse);
-                            }
-                        }
-                        if (!foundReverse) {
-                            LOG.warn("No reverse found for matched SPT edge {}: {}", edge.getName(),
-                                    ((StreetEdge) edge).getOsmId());
-                        }
                     }
                 } else {
                     LOG.warn("Edge on SPT is not a StreetEdge!  Cannot use it.");

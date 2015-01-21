@@ -154,7 +154,7 @@ public class OTPConfigurator {
                     osmFiles.add(file);
                     break;
                 case SHAPEFILE:
-                    LOG.info("Fount SHAPEFILE {}", file);
+                    LOG.info("Found SHAPEFILE {}", file);
                     shapeFiles.add(file);
                     break;
                 case CONFIG:

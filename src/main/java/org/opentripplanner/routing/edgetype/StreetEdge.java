@@ -15,16 +15,14 @@ package org.opentripplanner.routing.edgetype;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import org.opentripplanner.common.TurnRestriction;
 import org.opentripplanner.common.TurnRestrictionType;
 import org.opentripplanner.common.geometry.CompactLineString;
 import org.opentripplanner.common.geometry.DirectionUtils;
 import org.opentripplanner.common.geometry.PackedCoordinateSequence;
+import org.opentripplanner.common.model.extras.OptionSet;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.core.StateEditor;
@@ -78,9 +76,22 @@ public class StreetEdge extends Edge implements Cloneable {
     private static final int SLOPEOVERRIDE_FLAG_INDEX = 5;
     private static final int WHEELCHAIR_ACCESSIBLE_FLAG_INDEX = 6;
 
+    ///////////////////////////////////////////////////////////////////////////////////
     /* Counts of features on this edge */
     private int benchCount = 0;
     private int toiletCount = 0;
+
+    // optional extra features for weighting
+    private OptionSet extras;
+
+    public OptionSet getExtras() {
+        return extras;
+    }
+
+    public void setExtras(OptionSet extras) {
+        this.extras = extras;
+    }
+    /////////////////////////////////////////////////////////////////////////////////
 
     /** back, roundabout, stairs, ... */
     private byte flags;
@@ -456,7 +467,7 @@ public class StreetEdge extends Edge implements Cloneable {
             s1.incrementWalkDistance(getDistance());
         }
 
-        // accummulate feature counts
+        // accumulate feature counts
         s1.incrementBenchCount(getBenchCount());
         s1.incrementToiletCount(getToiletCount());
 
@@ -572,9 +583,31 @@ public class StreetEdge extends Edge implements Cloneable {
     }
 
     public String toString() {
-        return "PlainStreetEdge(" + getId() + ", " + name + ", " + getOsmId() + ", "
-                + fromv + " -> " + tov + " length=" + this.getDistance() + " benches=" + benchCount
-                + " toilets=" + toiletCount + " permission=" + this.getPermission() + ")";
+        StringBuilder sb = new StringBuilder();
+        sb.append("PlainStreetEdge(");
+        sb.append(getId());
+        sb.append(", ");
+        sb.append(name);
+        sb.append(", ");
+        sb.append(getOsmId());
+        sb.append(", ");
+        sb.append(fromv);
+        sb.append(" -> ");
+        sb.append(tov);
+        sb.append(" length=");
+        sb.append(this.getDistance());
+        // TODO: move/remove bench/toilet counters
+        //sb.append(" benches=");
+        //sb.append(benchCount);
+        //sb.append(" toilets=");
+        //sb.append(toiletCount);
+        sb.append(" permission=");
+        sb.append(this.getPermission());
+        if (extras != null) {
+            sb.append(extras.toString());
+        }
+        sb.append(")");
+        return sb.toString();
     }
 
     @Override
