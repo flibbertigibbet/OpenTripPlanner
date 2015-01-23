@@ -5,14 +5,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.HashMap;
 
 /**
- * An optional additional field that may be added to an Edge or Vertex.
+ * An optional additional field with a numeric value that may be added to an Edge or Vertex.
  * Enum type defines the list of optional fields available as an enumeration.
- * The option attribute subclasses of this will be assigned a byte value; all of the field subclasses
- * will have their option byte values taken from the shared byte here, so there can be a a maximum of
- * 256 possible option values across all the option fields without using a larger type.
  *
  * Created by kathrynkillebrew on 1/22/15.
  */
@@ -43,7 +39,7 @@ public abstract class ExtraAttribute<T extends Enum<T> & OptionFieldsFactory> im
 
     public abstract Number getValue();
 
-    // An OptionAttribute equals another if of the same option type and with the same byte value
+    // An ExtraAttribute equals another if of the same option type and with the same value
     @Override
     public boolean equals(Object o) {
         if (o == this) {
@@ -60,7 +56,7 @@ public abstract class ExtraAttribute<T extends Enum<T> & OptionFieldsFactory> im
         }
     }
 
-    // <OptionAttribute> FIELD_ENUMERATION_VALUE -> 5 (Input label for byte value 5)
+    // <ExtraAttribute> FIELD_ENUMERATION_VALUE -> 5 (Input label for byte value 5)
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

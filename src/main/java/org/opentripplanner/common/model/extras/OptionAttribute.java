@@ -1,11 +1,5 @@
 package org.opentripplanner.common.model.extras;
 
-import com.conveyal.gtfs.error.NumberParseError;
-import org.opentripplanner.common.MavenVersion;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
 import java.util.HashMap;
 
 /**
@@ -19,8 +13,6 @@ import java.util.HashMap;
  */
 public abstract class OptionAttribute<T extends Enum<T> & OptionFieldsFactory> extends ExtraAttribute {
 
-    private static final long serialVersionUID = MavenVersion.VERSION.getUID();
-
     // ordinal of next option to be created (start with minimum byte value)
     private static byte nextOrdinal = -128;
 
@@ -32,7 +24,6 @@ public abstract class OptionAttribute<T extends Enum<T> & OptionFieldsFactory> e
 
     // for reverse lookup by option value
     private static HashMap<Byte, OptionAttribute> byteLookup = new HashMap();
-
 
     public OptionAttribute(String inputLabel) {
         super(inputLabel);
@@ -66,37 +57,6 @@ public abstract class OptionAttribute<T extends Enum<T> & OptionFieldsFactory> e
     @Override
     public Number getValue() {
         return ordinal;
-    }
-
-    // An OptionAttribute equals another if of the same option type and with the same byte value
-    @Override
-    public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-        } else if (this.getClass().equals(o.getClass())) {
-            OptionAttribute obj = (OptionAttribute)o;
-            if (obj.getValue() == this.getValue()) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-
-    // <OptionAttribute> FIELD_ENUMERATION_VALUE -> 5 (Input label for byte value 5)
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<OptionAttribute> ");
-        sb.append(this.getName());
-        sb.append(" -> ");
-        sb.append(this.getValue());
-        sb.append(" (");
-        sb.append(this.getLabel());
-        sb.append(")");
-        return sb.toString();
     }
 }
 
