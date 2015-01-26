@@ -16,6 +16,7 @@ package org.opentripplanner.api.model;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
@@ -112,6 +113,12 @@ public class WalkStep {
      */
     public int benches;
     public int toilets;
+
+    /**
+     * Time the step was last audited, will serialize to an epoch in milliseconds
+     * If null, will be blank
+     */
+    public Date lastAudited;
 
     /**
      * The elevation profile as a comma-separated list of x,y values. x is the distance from the start of the step, y is the elevation at this

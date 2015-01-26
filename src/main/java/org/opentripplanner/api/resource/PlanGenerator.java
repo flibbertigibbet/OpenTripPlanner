@@ -15,6 +15,7 @@ package org.opentripplanner.api.resource;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Set;
@@ -1041,6 +1042,10 @@ public class PlanGenerator {
                 StreetEdge street = (StreetEdge) edge;
                 step.benches += street.getBenchCount();
                 step.toilets += street.getToiletCount();
+                // TODO: Make this generic and move NIH specific code out of PlanGenerator
+                if (street.getExtraNumericFields() != null || street.getExtraOptionFields() != null) {
+                    step.lastAudited = new Date();
+                }
             }
         }
         return steps;
@@ -1070,6 +1075,7 @@ public class PlanGenerator {
         step.lon = en.getFromVertex().getX();
         step.lat = en.getFromVertex().getY();
         step.elevation = encodeElevationProfile(s.getBackEdge(), 0);
+        step.lastAudited = null;
         step.bogusName = en.hasBogusName();
         step.addAlerts(graph.streetNotesService.getNotes(s));
         step.angle = DirectionUtils.getFirstAngle(en.getGeometry());
