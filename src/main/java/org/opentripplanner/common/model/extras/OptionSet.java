@@ -62,7 +62,7 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
      * @param attr Attribute instance for value to set on field
      */
     public void setValue(T option, OptionAttribute attr) {
-        optionValues.put(option, attr.getValue());
+        optionValues.put(option, (Byte)attr.getValue());
     }
 
     /**

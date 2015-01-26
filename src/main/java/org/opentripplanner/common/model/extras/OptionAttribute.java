@@ -1,5 +1,6 @@
 package org.opentripplanner.common.model.extras;
 
+import com.conveyal.gtfs.error.NumberParseError;
 import org.opentripplanner.common.MavenVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,14 +17,9 @@ import java.util.HashMap;
  *
  * Created by kathrynkillebrew on 1/22/15.
  */
-public abstract class OptionAttribute<T extends Enum<T> & OptionFieldsFactory> implements Serializable {
+public abstract class OptionAttribute<T extends Enum<T> & OptionFieldsFactory> extends ExtraAttribute {
 
     private static final long serialVersionUID = MavenVersion.VERSION.getUID();
-
-    private static Logger LOG = LoggerFactory.getLogger(OptionAttribute.class);
-
-    // Field name used by input source
-    private final String inputLabel;
 
     // ordinal of next option to be created (start with minimum byte value)
     private static byte nextOrdinal = -128;
@@ -31,39 +27,20 @@ public abstract class OptionAttribute<T extends Enum<T> & OptionFieldsFactory> i
     // assign an ordinal to this option
     private final byte ordinal = nextOrdinal++;
 
-    // for reverse lookup by option value
-    private static HashMap<Byte, OptionAttribute> byteLookup = new HashMap();
-
     // for reverse lookup by field name + input label
     private static HashMap<String, OptionAttribute> labelLookup = new HashMap();
 
+    // for reverse lookup by option value
+    private static HashMap<Byte, OptionAttribute> byteLookup = new HashMap();
+
+
     public OptionAttribute(String inputLabel) {
-        this.inputLabel = inputLabel;
-        byteLookup.put(this.getValue(), this);
+        super(inputLabel);
+
+        byteLookup.put(this.ordinal, this);
 
         // for lookup during input processing by input field name label + option column value
-        labelLookup.put(this.getName().getFieldName() + this.getLabel(), this);
-    }
-
-    public String getLabel() {
-        return inputLabel;
-    }
-
-    /**
-     * Find which field this option is for
-     *
-     * @return Enumeration value defined for field
-     */
-    public abstract T getName();
-
-    /**
-     * Find the field option model for its byte value
-     *
-     * @param value Ordinal value assigned to this option, tracked in the OptionSet
-     * @return Option model for selection (an instance of a subclass of this class)
-     */
-    public static OptionAttribute getOptionForValue(byte value) {
-        return byteLookup.get(value);
+        labelLookup.put(((T)this.getName()).getFieldName() + this.getLabel(), this);
     }
 
     /**
@@ -76,7 +53,18 @@ public abstract class OptionAttribute<T extends Enum<T> & OptionFieldsFactory> i
         return labelLookup.get(label);
     }
 
-    public byte getValue() {
+    /**
+     * Find the field option model for its byte value
+     *
+     * @param value Ordinal value assigned to this option, tracked in the OptionSet
+     * @return Option model for selection (an instance of a subclass of this class)
+     */
+    public static OptionAttribute getOptionForValue(Byte value) {
+        return byteLookup.get(value);
+    }
+
+    @Override
+    public Number getValue() {
         return ordinal;
     }
 
