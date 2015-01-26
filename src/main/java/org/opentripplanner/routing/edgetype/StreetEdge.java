@@ -22,6 +22,7 @@ import org.opentripplanner.common.TurnRestrictionType;
 import org.opentripplanner.common.geometry.CompactLineString;
 import org.opentripplanner.common.geometry.DirectionUtils;
 import org.opentripplanner.common.geometry.PackedCoordinateSequence;
+import org.opentripplanner.common.model.extras.NumericFieldSet;
 import org.opentripplanner.common.model.extras.OptionSet;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.core.State;
@@ -78,14 +79,24 @@ public class StreetEdge extends Edge implements Cloneable {
     private int toiletCount = 0;
 
     // optional extra features for weighting
-    private OptionSet extras;
+    private OptionSet extraOptionFields;
 
-    public OptionSet getExtras() {
-        return extras;
+    private NumericFieldSet extraNumericFields;
+
+    public OptionSet getExtraOptionFields() {
+        return extraOptionFields;
     }
 
-    public void setExtras(OptionSet extras) {
-        this.extras = extras;
+    public void setExtraOptionFields(OptionSet extraOptionFields) {
+        this.extraOptionFields = extraOptionFields;
+    }
+
+    public NumericFieldSet getExtraNumericFields() {
+        return extraNumericFields;
+    }
+
+    public void setExtraNumericFields(NumericFieldSet extraNumericFields) {
+        this.extraNumericFields = extraNumericFields;
     }
     /////////////////////////////////////////////////////////////////////////////////
 
@@ -343,8 +354,11 @@ public class StreetEdge extends Edge implements Cloneable {
         //sb.append(toiletCount);
         sb.append(" permission=");
         sb.append(this.getPermission());
-        if (extras != null) {
-            sb.append(extras.toString());
+        if (extraOptionFields != null) {
+            sb.append(extraOptionFields.toString());
+        }
+        if (extraNumericFields != null) {
+            sb.append(extraNumericFields.toString());
         }
         sb.append(")");
         return sb.toString();
@@ -359,7 +373,8 @@ public class StreetEdge extends Edge implements Cloneable {
             clone.osmId = this.osmId;
             clone.benchCount = this.benchCount;
             clone.toiletCount = this.toiletCount;
-            clone.extras = this.extras;
+            clone.extraOptionFields = this.extraOptionFields;
+            clone.extraNumericFields = this.extraNumericFields;
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e);

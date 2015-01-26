@@ -28,11 +28,6 @@ public enum NihOption implements OptionFieldsFactory, Serializable {
     SOCIAL_DISORDER("SocialDiso", false, SocialDisorder.class),
     HAZARD_SEVERE("HazardSeve", false, Hazards.class);
 
-    // TODO: these are numeric fields, not options
-    //SAFE_SCORE("SafeScore", false),
-    //PLEASANTNESS("Pleasantne", false),
-    //NICENESS("Niceness", false);
-
     // NOTE:
     // Fields that are directional, but encoded in a single column (bike lane, parking lane, etc.)
     // have their input values (Both, Left, Right, None) normalized to just (Both, None) when read, so
