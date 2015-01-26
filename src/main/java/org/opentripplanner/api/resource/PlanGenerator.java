@@ -533,22 +533,27 @@ public class PlanGenerator {
             if (state.getBackMode() == null) continue;
 
             switch (state.getBackMode()) {
-                default:
-                    itinerary.transitTime += state.getTimeDeltaSeconds();
-                    break;
-
                 case LEG_SWITCH:
                     itinerary.waitingTime += state.getTimeDeltaSeconds();
                     break;
-
                 case WALK:
                     itinerary.benches = state.getBenches();
                     itinerary.toilets = state.getToilets();
+                    itinerary.walkTime += state.getTimeDeltaSeconds();
                     break;
                 case BICYCLE:
+                    itinerary.walkTime += state.getTimeDeltaSeconds();
+                    break;
                 case CAR:
+                    itinerary.walkTime += state.getTimeDeltaSeconds();
+                    break;
                 case CUSTOM_MOTOR_VEHICLE:
                     itinerary.walkTime += state.getTimeDeltaSeconds();
+                    break;
+                default:
+                    // transit legs
+                    itinerary.transitTime += state.getTimeDeltaSeconds();
+                    break;
             }
         }
     }
