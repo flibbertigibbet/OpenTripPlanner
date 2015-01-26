@@ -16,7 +16,7 @@ import java.util.Set;
  *
  * Created by kathrynkillebrew on 1/22/15.
  */
-public class NumericFieldSet<T extends Enum<T> & OptionFieldsFactory> implements Serializable {
+public class NumericFieldSet<T extends Enum<T> & ExtraFieldsFactory> implements Serializable {
 
     private static final long serialVersionUID = MavenVersion.VERSION.getUID();
 
@@ -25,7 +25,7 @@ public class NumericFieldSet<T extends Enum<T> & OptionFieldsFactory> implements
     // cannot reference generic type in static block, so initialize option classes once with this flag
     private static boolean optionsInitialized = false;
 
-    private transient EnumMap<T, Float> numericValues;
+    private transient EnumMap<T, Integer> numericValues;
 
     // keep track of the enumeration type
     private Class<T> enumClass;
@@ -42,7 +42,7 @@ public class NumericFieldSet<T extends Enum<T> & OptionFieldsFactory> implements
      * @param option Field from fields enumeration
      * @param value Numeric value for field
      */
-    public void setValue(T option,float value) {
+    public void setValue(T option, int value) {
         numericValues.put(option, value);
     }
 
@@ -50,18 +50,19 @@ public class NumericFieldSet<T extends Enum<T> & OptionFieldsFactory> implements
      * Get the full set of values
      * @return Collection mapping field name from enumeration to float value set for field
      */
-    public EnumMap<T, Float> getNumericValues() {
+    public EnumMap<T, Integer> getNumericValues() {
         return numericValues;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("<OptionSet <");
+        sb.append("<NumericFieldSet <");
         sb.append(enumClass.getName());
-        sb.append(">>: ");
+        sb.append(">>:");
         Set<T> options = numericValues.keySet();
         for (T option : options) {
+            sb.append(" ");
             sb.append(option.name());
             sb.append(" (");
             sb.append(option.getFieldName());
@@ -71,13 +72,12 @@ public class NumericFieldSet<T extends Enum<T> & OptionFieldsFactory> implements
         return sb.toString();
     }
 
-    /*
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         // perform default serialization of non-transient, non-static fields
         out.defaultWriteObject();
 
         // put extras into a HashMap for serialization
-        HashMap<T, Float> serializableExtras = new HashMap<>(numericValues.size());
+        HashMap<T, Integer> serializableExtras = new HashMap<>(numericValues.size());
 
         for (T option : numericValues.keySet()) {
             serializableExtras.put(option, numericValues.get(option));
@@ -95,7 +95,7 @@ public class NumericFieldSet<T extends Enum<T> & OptionFieldsFactory> implements
         // perform the default de-serialization first
         in.defaultReadObject();
 
-        HashMap<T, Float> serializableExtras = (HashMap<T, Float>) in.readObject();
+        HashMap<T, Integer> serializableExtras = (HashMap<T, Integer>) in.readObject();
 
         if (serializableExtras == null) {
             return;
@@ -104,5 +104,4 @@ public class NumericFieldSet<T extends Enum<T> & OptionFieldsFactory> implements
         numericValues = new EnumMap(enumClass);
         numericValues.putAll(serializableExtras);
     }
-    */
 }
