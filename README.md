@@ -8,6 +8,11 @@ Additional instructions are available on the [OpenTripPlanner wiki](https://gith
 Here's a [quick introduction](https://github.com/opentripplanner/OpenTripPlanner/wiki/Minimal-Introduction).
 
 
+## Build Status
+
+[![](https://travis-ci.org/azavea/OpenTripPlanner.svg?branch=develop)](https://travis-ci.org/azavea/OpenTripPlanner)
+
+
 ## Development
 
 OpenTripPlanner is a collaborative project incorporating code, translation, and documentation from contributors around the world. We welcome new contributions and prefer to format our code according to GeoTools-based formatting guidelines; an Eclipse autoformatter can be found at the root of this project (https://raw.github.com/openplans/OpenTripPlanner/master/formatter.xml). Further development guidelines can be found on the project wiki (https://github.com/openplans/OpenTripPlanner/wiki/DevelopersGuide).
