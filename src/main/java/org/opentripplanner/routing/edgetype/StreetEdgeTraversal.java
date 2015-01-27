@@ -20,12 +20,20 @@ public class StreetEdgeTraversal {
 
     private static final double GREENWAY_SAFETY_FACTOR = 0.1;
 
+    private StreetEdge edge;
+    private State state;
+
+    public StreetEdgeTraversal(StreetEdge edge, State state) {
+        this.edge = edge;
+        this.state = state;
+    }
+
     /** return a StateEditor rather than a State so that we can make parking/mode switch modifications for kiss-and-ride. */
-    public static StateEditor doTraverse(StreetEdge edge, State s0, RoutingRequest options, TraverseMode traverseMode) {
+    public StateEditor doTraverse(RoutingRequest options, TraverseMode traverseMode) {
         boolean walkingBike = options.walkingBike;
-        boolean backWalkingBike = s0.isBackWalkingBike();
-        TraverseMode backMode = s0.getBackMode();
-        Edge backEdge = s0.getBackEdge();
+        boolean backWalkingBike = state.isBackWalkingBike();
+        TraverseMode backMode = state.getBackMode();
+        Edge backEdge = state.getBackEdge();
         if (backEdge != null) {
             // No illegal U-turns.
             // NOTE(flamholz): we check both directions because both edges get a chance to decide
@@ -45,7 +53,7 @@ public class StreetEdgeTraversal {
         /* Check whether this street allows the current mode. If not and we are biking, attempt to walk the bike. */
         if (!edge.canTraverse(options, traverseMode)) {
             if (traverseMode == TraverseMode.BICYCLE) {
-                return doTraverse(edge, s0, options.bikeWalkingOptions, TraverseMode.WALK);
+                return doTraverse(options.bikeWalkingOptions, TraverseMode.WALK);
             }
             return null;
         }
@@ -136,7 +144,7 @@ public class StreetEdgeTraversal {
             weight *= options.walkReluctance;
         }
 
-        StateEditor s1 = s0.edit(edge);
+        StateEditor s1 = state.edit(edge);
         s1.setBackMode(traverseMode);
         s1.setBackWalkingBike(walkingBike);
 
@@ -145,14 +153,14 @@ public class StreetEdgeTraversal {
         if (backEdge != null && backEdge instanceof StreetEdge) {
             backPSE = (StreetEdge) backEdge;
             RoutingRequest backOptions = backWalkingBike ?
-                    s0.getOptions().bikeWalkingOptions : s0.getOptions();
+                    state.getOptions().bikeWalkingOptions : state.getOptions();
             double backSpeed = backPSE.calculateSpeed(backOptions, backMode);
             double realTurnCost;  // Units are seconds.
 
             // Apply turn restrictions
-            if (options.arriveBy && !edge.canTurnOnto(backPSE, s0, backMode)) {
+            if (options.arriveBy && !edge.canTurnOnto(backPSE, state, backMode)) {
                 return null;
-            } else if (!options.arriveBy && !backPSE.canTurnOnto(edge, s0, traverseMode)) {
+            } else if (!options.arriveBy && !backPSE.canTurnOnto(edge, state, traverseMode)) {
                 return null;
             }
 
@@ -228,13 +236,13 @@ public class StreetEdgeTraversal {
         int roundedTime = (int) Math.ceil(time);
         if (options.kissAndRide || options.parkAndRide) {
             if (options.arriveBy) {
-                if (!s0.isCarParked()) s1.incrementPreTransitTime(roundedTime);
+                if (!state.isCarParked()) s1.incrementPreTransitTime(roundedTime);
             } else {
-                if (!s0.isEverBoarded()) s1.incrementPreTransitTime(roundedTime);
+                if (!state.isEverBoarded()) s1.incrementPreTransitTime(roundedTime);
             }
             if (s1.isMaxPreTransitTimeExceeded(options)) {
                 if (options.softPreTransitLimiting) {
-                    weight += calculateOverageWeight(s0.getPreTransitTime(), s1.getPreTransitTime(),
+                    weight += calculateOverageWeight(state.getPreTransitTime(), s1.getPreTransitTime(),
                             options.maxPreTransitTime, options.preTransitPenalty,
                             options.preTransitOverageRate);
                 } else return null;
@@ -247,7 +255,7 @@ public class StreetEdgeTraversal {
             // if we're using a soft walk-limit
             if( options.softWalkLimiting ){
                 // just slap a penalty for the overage onto s1
-                weight += calculateOverageWeight(s0.getWalkDistance(), s1.getWalkDistance(),
+                weight += calculateOverageWeight(state.getWalkDistance(), s1.getWalkDistance(),
                         options.getMaxWalkDistance(), options.softWalkPenalty,
                         options.softWalkOverageRate);
             } else {
