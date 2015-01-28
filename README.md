@@ -10,7 +10,7 @@ Here's a [quick introduction](https://github.com/opentripplanner/OpenTripPlanner
 
 ## Build Status
 
-[![](https://travis-ci.org/azavea/OpenTripPlanner.svg?branch=develop)](https://travis-ci.org/azavea/OpenTripPlanner)
+[![](https://travis-ci.org/azavea/OpenTripPlanner.svg?branch=nih)](https://travis-ci.org/azavea/OpenTripPlanner)
 
 
 ## Development
