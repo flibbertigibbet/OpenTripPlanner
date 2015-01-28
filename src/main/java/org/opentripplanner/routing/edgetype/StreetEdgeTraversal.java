@@ -145,6 +145,10 @@ public class StreetEdgeTraversal {
             time *= 0.001;
         }
 
+        StateEditor s1 = state.edit(edge);
+        s1.setBackMode(traverseMode);
+        s1.setBackWalkingBike(walkingBike);
+
         ///////////////////////////////////
         // NIH weighting preferences
         OptionSet extraOptions = edge.getExtraOptionFields();
@@ -158,17 +162,20 @@ public class StreetEdgeTraversal {
             weight *= 0.8;
 
             // check for NIH routing params
-            if (!options.allowUnevenSurfaces) {
-                OptionAttribute slope = extraOptions.getOption(NihOption.XSLOPE);
-                if ((slope != null) && (slope == XSlope.SLOPED)) {
+            OptionAttribute slope = extraOptions.getOption(NihOption.XSLOPE);
+            if ((slope != null) && (slope == XSlope.SLOPED)) {
+                s1.setHasUnevenSurfaces(); // mark state
+                if (!options.allowUnevenSurfaces) {
                     LOG.info("Avoiding edge {}: {} due to slope", edge.getName(), edge.getOsmId());
                     return null;
                 }
             }
 
-            if (options.restingPlaces) {
-                OptionAttribute rest = extraOptions.getOption(NihOption.REST);
-                if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
+
+            OptionAttribute rest = extraOptions.getOption(NihOption.REST);
+            if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
+                s1.setPassesRestingPlaces(); // mark state
+                if (options.restingPlaces) {
                     LOG.info("Preferring edge {}: {} with resting place {}", edge.getName(), edge.getOsmId(), rest.getLabel());
                     weight *= 0.01;
                     time *= 0.01;
@@ -218,16 +225,20 @@ public class StreetEdgeTraversal {
         }
         //////////////////////////////////
 
+        // accumulate feature counts
+        s1.incrementBenchCount(edge.getBenchCount());
+        s1.incrementToiletCount(edge.getToiletCount());
+
+        // Set NIH attributes on state
+
+        ////////////////////////////////////////
+
         if (edge.isStairs()) {
             weight *= options.stairsReluctance;
         } else {
             // TODO: this is being applied even when biking or driving.
             weight *= options.walkReluctance;
         }
-
-        StateEditor s1 = state.edit(edge);
-        s1.setBackMode(traverseMode);
-        s1.setBackWalkingBike(walkingBike);
 
         /* Compute turn cost. */
         StreetEdge backPSE;
@@ -316,10 +327,6 @@ public class StreetEdgeTraversal {
         if (!traverseMode.isDriving()) {
             s1.incrementWalkDistance(edge.getDistance());
         }
-
-        // accumulate feature counts
-        s1.incrementBenchCount(edge.getBenchCount());
-        s1.incrementToiletCount(edge.getToiletCount());
 
         /* On the pre-kiss/pre-park leg, limit both walking and driving, either soft or hard. */
         int roundedTime = (int) Math.ceil(time);

@@ -43,6 +43,7 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
 
     private static boolean preferBenches;
     private static boolean preferToilets;
+    private static boolean restingPlaces;
 
     private static final Logger LOG = LoggerFactory.getLogger(MultiShortestPathTree.class);
 
@@ -75,6 +76,7 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
         super(options);
         preferBenches = options.preferBenches;
         preferToilets = options.preferToilets;
+        restingPlaces = options.restingPlaces;
         stateSets = new IdentityHashMap<Vertex, List<State>>();
     }
 
@@ -143,6 +145,9 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
         if (preferBenches && (thisState.hasBenches() || other.hasBenches()))
             return false;
         if (preferToilets && (thisState.hasToilets() || other.hasToilets()))
+            return false;
+
+        if (restingPlaces && (thisState.passesRestingPlaces || other.passesRestingPlaces))
             return false;
         ///////////////////
 

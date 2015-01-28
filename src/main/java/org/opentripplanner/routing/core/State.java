@@ -52,6 +52,17 @@ public class State implements Cloneable {
     private boolean preferBenches;
     private boolean preferToilets;
 
+    /////////////////////////
+    // NIH properties
+
+    // request parameters
+    private boolean preferRestingPlaces;
+
+    // flags set on first uneven surface/resting place passed
+    public boolean hasUnevenSurfaces = false;
+    public boolean passesRestingPlaces = false;
+    ///////////////////////
+
     // associate this state with a vertex in the graph
     protected Vertex vertex;
 
@@ -122,6 +133,7 @@ public class State implements Cloneable {
         this.stateData = new StateData(options);
         this.preferBenches = options.preferBenches;
         this.preferToilets = options.preferToilets;
+        this.preferRestingPlaces = options.restingPlaces;
 
         // note that here we are breaking the circular reference between rctx and options
         // this should be harmless since reversed clones are only used when routing has finished
@@ -188,9 +200,13 @@ public class State implements Cloneable {
     }
 
     public String toString() {
-        return "<State " + new Date(getTimeInMillis()) + " [" + weight + "] "
+        String str = "<State " + new Date(getTimeInMillis()) + " [" + weight + "] "
                 + (isBikeRenting() ? "BIKE_RENT " : "") + (isCarParked() ? "CAR_PARKED " : "")
-                + vertex + (hasBenches() ? " BENCHES" : "") + (hasToilets() ? " TOILETS" : "") + ">";
+                + vertex + (hasBenches() ? " BENCHES" : "") + (hasToilets() ? " TOILETS" : "");
+        if (this.hasUnevenSurfaces) str += " UNEVEN";
+        if (this.passesRestingPlaces) str += " RESTING PLACES";
+        str += ">";
+        return str;
     }
 
     public Boolean hasBenches() {
@@ -202,16 +218,20 @@ public class State implements Cloneable {
     }
 
     public String toStringVerbose() {
-        return "<State " + new Date(getTimeInMillis()) +
+        String str = "<State " + new Date(getTimeInMillis()) +
                 " w=" + this.getWeight() +
                 " t=" + this.getElapsedTimeSeconds() +
                 " d=" + this.getWalkDistance() +
                 " p=" + this.getPreTransitTime() +
                 " b=" + this.getNumBoardings() +
                 " br=" + this.isBikeRenting() +
-                " benches=" + this.getBenches() +
-                " toilets=" + this.getToilets() +
-                " pr=" + this.isCarParked() + ">";
+                " pr=" + this.isCarParked();
+        if (hasBenches()) str += " benches=" + this.getBenches();
+        if (hasToilets()) str += " toilets=" + this.getToilets();
+        if (passesRestingPlaces) str += " REST";
+        if (hasUnevenSurfaces) str += " UNEVEN";
+        str += ">";
+        return str;
     }
 
     /** Returns time in seconds since epoch */
@@ -362,6 +382,16 @@ public class State implements Cloneable {
             thisPrefVal += this.getToilets();
             thatPrefVal += other.getToilets();
         }
+
+        if (preferRestingPlaces) {
+            if (this.passesRestingPlaces) {
+                thisPrefVal++;
+            }
+            if (other.passesRestingPlaces) {
+                thatPrefVal++;
+            }
+        }
+
         return thisPrefVal > thatPrefVal;
     }
 
