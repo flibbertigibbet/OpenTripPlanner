@@ -61,6 +61,7 @@ public class State implements Cloneable {
     // flags set on first uneven surface/resting place passed
     public boolean hasUnevenSurfaces = false;
     public boolean passesRestingPlaces = false;
+    public boolean aesthetic = false;
     ///////////////////////
 
     // associate this state with a vertex in the graph
@@ -205,6 +206,7 @@ public class State implements Cloneable {
                 + vertex + (hasBenches() ? " BENCHES" : "") + (hasToilets() ? " TOILETS" : "");
         if (this.hasUnevenSurfaces) str += " UNEVEN";
         if (this.passesRestingPlaces) str += " RESTING PLACES";
+        if (this.aesthetic) str += " AESTHETIC";
         str += ">";
         return str;
     }
@@ -230,6 +232,7 @@ public class State implements Cloneable {
         if (hasToilets()) str += " toilets=" + this.getToilets();
         if (passesRestingPlaces) str += " REST";
         if (hasUnevenSurfaces) str += " UNEVEN";
+        if (aesthetic) str += " AESTHETIC";
         str += ">";
         return str;
     }

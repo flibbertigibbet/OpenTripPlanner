@@ -115,6 +115,18 @@ public class GraphPath {
         return states.getLast().getToilets();
     }
 
+    public boolean getAesthetic() {
+        return states.getLast().aesthetic;
+    }
+
+    public boolean getRest() {
+        return states.getLast().passesRestingPlaces;
+    }
+
+    public boolean getUneven() {
+        return states.getLast().hasUnevenSurfaces;
+    }
+
     /**
      * Returns the start time of the trip in seconds since the epoch.
      * @return
@@ -201,8 +213,19 @@ public class GraphPath {
         System.out.println(" --- END GRAPHPATH DUMP ---");
         System.out.println("Total meters walked in this graphpath: " +
                states.getLast().getWalkDistance());
-        System.out.println("Total benches passed in this graphpath: " + getBenches());
-        System.out.println("Total toilets passed in this graphpath: " + getToilets());
+        if (getBenches() > 0)
+            System.out.println("Total benches passed in this graphpath: " + getBenches());
+        if (getToilets() > 0)
+            System.out.println("Total toilets passed in this graphpath: " + getToilets());
+        if (getAesthetic())
+            System.out.println("Aesthetically pleases edges passed in this graphpath.");
+        if (getRest())
+            System.out.println("Resting places passed in this graphpath.");
+        if (getUneven()) {
+            System.out.println("Uneven edges in this graphpath.");
+        } else {
+            System.out.println("No uneven edges in this graphpath.");
+        }
     }
 
     public void dumpPathParser() {

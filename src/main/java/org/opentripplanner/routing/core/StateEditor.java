@@ -199,6 +199,10 @@ public class StateEditor {
     public void setHasUnevenSurfaces() {
         child.hasUnevenSurfaces = true;
     }
+
+    public void setIsAesthetic() {
+        child.aesthetic = true;
+    }
     ////////////////////////////////////////////////////
 
     /* Incrementors */

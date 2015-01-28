@@ -135,6 +135,18 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
         if (thisState.isBikeParked() != other.isBikeParked())
             return false;
 
+        Graph graph = thisState.getOptions().rctx.graph;
+        if (thisState.backEdge != other.getBackEdge() && ((thisState.backEdge instanceof StreetEdge)
+                && (!graph.getTurnRestrictions(thisState.backEdge).isEmpty())))
+            return false;
+
+        if (thisState.routeSequenceSubset(other)) {
+            // TODO subset is not really the right idea
+            return thisState.weight <= other.weight &&
+            		thisState.getElapsedTimeSeconds() <= other.getElapsedTimeSeconds();
+            // && this.getNumBoardings() <= other.getNumBoardings();
+        }
+
         ///////////////
         // TODO: It would probably be better to come up with some kind of "is hopeful" measurement
         // below for deciding when/if to dominate in feature-preference mode; otherwise,
@@ -147,21 +159,9 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
         if (preferToilets && (thisState.hasToilets() || other.hasToilets()))
             return false;
 
-        if (restingPlaces && (thisState.passesRestingPlaces || other.passesRestingPlaces))
+        if (restingPlaces && (!thisState.passesRestingPlaces && !other.passesRestingPlaces))
             return false;
-        ///////////////////
-
-        Graph graph = thisState.getOptions().rctx.graph;
-        if (thisState.backEdge != other.getBackEdge() && ((thisState.backEdge instanceof StreetEdge)
-                && (!graph.getTurnRestrictions(thisState.backEdge).isEmpty())))
-            return false;
-
-        if (thisState.routeSequenceSubset(other)) {
-            // TODO subset is not really the right idea
-            return thisState.weight <= other.weight &&
-            		thisState.getElapsedTimeSeconds() <= other.getElapsedTimeSeconds();
-            // && this.getNumBoardings() <= other.getNumBoardings();
-        }
+        /////////////////////////////////////////////////////////////////////////////////////
 
         // If returning more than one result from GenericAStar, the search can be very slow
         // unless you replace the following code with:

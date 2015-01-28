@@ -68,6 +68,13 @@ public class Itinerary {
     public int toilets = 0;
 
     /**
+     * NIH properties
+     */
+    public boolean restingPlaces = false;
+    public boolean unevenSurfaces = false;
+    public boolean aesthetic = false;
+
+    /**
      * Indicates that the walk limit distance has been exceeded for this itinerary when true.
      */
     public boolean walkLimitExceeded = false;

@@ -202,8 +202,9 @@ public class StreetEdgeTraversal {
             OptionAttribute curbRamp = extraOptions.getOption(NihOption.CURB_RAMP);
             OptionAttribute surface = extraOptions.getOption(NihOption.SURFACE);
             if (options.wheelchairAccessible) {
-                if ((curbRamp == CurbRamp.NO) || ((surface != null) && (surface != Surface.CONCRETE)) );
-                return null;
+                if ( (curbRamp == CurbRamp.NO) || ((surface != null) && (surface != Surface.CONCRETE)) ) {
+                    return null;
+                }
             }
 
             if (curbRamp == CurbRamp.YES) {
@@ -221,6 +222,7 @@ public class StreetEdgeTraversal {
             if (aesthetic == Aesthetics.YES) {
                 // prefer pretty edges
                 weight *= 0.5;
+                s1.setIsAesthetic(); // mark state
             }
         }
         //////////////////////////////////
@@ -228,9 +230,6 @@ public class StreetEdgeTraversal {
         // accumulate feature counts
         s1.incrementBenchCount(edge.getBenchCount());
         s1.incrementToiletCount(edge.getToiletCount());
-
-        // Set NIH attributes on state
-
         ////////////////////////////////////////
 
         if (edge.isStairs()) {
