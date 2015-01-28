@@ -160,7 +160,7 @@ public class StreetEdgeTraversal {
             // check for NIH routing params
             if (!options.allowUnevenSurfaces) {
                 OptionAttribute slope = extraOptions.getOption(NihOption.XSLOPE);
-                if ((slope == XSlope.SLOPED)) {
+                if ((slope != null) && (slope == XSlope.SLOPED)) {
                     LOG.info("Avoiding edge {}: {} due to slope", edge.getName(), edge.getOsmId());
                     return null;
                 }
@@ -168,7 +168,7 @@ public class StreetEdgeTraversal {
 
             if (options.restingPlaces) {
                 OptionAttribute rest = extraOptions.getOption(NihOption.REST);
-                if ((rest != Rest.NONE_AVAILABLE)) {
+                if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
                     LOG.info("Preferring edge {}: {} with resting place {}", edge.getName(), edge.getOsmId(), rest.getLabel());
                     weight *= 0.01;
                     time *= 0.01;
@@ -195,7 +195,7 @@ public class StreetEdgeTraversal {
             OptionAttribute curbRamp = extraOptions.getOption(NihOption.CURB_RAMP);
             OptionAttribute surface = extraOptions.getOption(NihOption.SURFACE);
             if (options.wheelchairAccessible) {
-                if ((curbRamp == CurbRamp.NO) || (surface != Surface.CONCRETE));
+                if ((curbRamp == CurbRamp.NO) || ((surface != null) && (surface != Surface.CONCRETE)) );
                 return null;
             }
 

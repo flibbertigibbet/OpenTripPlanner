@@ -123,6 +123,10 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
      * @return Attribute object for the value set on the given field
      */
     public OptionAttribute getOption(T option) {
+        if (!optionValues.containsKey(option)) {
+            LOG.warn("No value found for option {}!", option.getFieldName());
+            return null;
+        }
         byte val = optionValues.get(option);
         return OptionAttribute.getOptionForValue(val);
     }
