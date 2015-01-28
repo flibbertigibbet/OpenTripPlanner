@@ -86,6 +86,14 @@ public abstract class RoutingResource {
     @DefaultValue("false") @QueryParam("benches") protected List<Boolean> benches;
     @DefaultValue("false") @QueryParam("toilets") protected List<Boolean> toilets;
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    /** NIH routing paramters */
+    @DefaultValue("true") @QueryParam("allowUnevenSurfaces") protected Boolean allowUnevenSurfaces;
+    @DefaultValue("false") @QueryParam("restingPlaces") protected Boolean restingPlaces;
+    // crowding: -1 indicates don't care; 0 (quiet) to 1 (crowded)
+    @DefaultValue("-1") @QueryParam("crowding") protected Double crowding;
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
     /** The maximum distance (in meters) the user is willing to walk. Defaults to unlimited. */
     @QueryParam("maxWalkDistance") protected List<Double> maxWalkDistance;
 

@@ -1,5 +1,11 @@
 package org.opentripplanner.routing.edgetype;
 
+import org.opentripplanner.common.model.extras.NumericFieldSet;
+import org.opentripplanner.common.model.extras.OptionAttribute;
+import org.opentripplanner.common.model.extras.OptionSet;
+import org.opentripplanner.common.model.extras.nihOptions.NihNumeric;
+import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihOptions.fields.*;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.core.StateEditor;
@@ -10,6 +16,8 @@ import org.opentripplanner.routing.util.ElevationUtils;
 import org.opentripplanner.routing.vertextype.IntersectionVertex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.EnumMap;
 
 /**
  * Created by kathrynkillebrew on 1/23/15.
@@ -137,6 +145,79 @@ public class StreetEdgeTraversal {
             time *= 0.001;
         }
 
+        ///////////////////////////////////
+        // NIH weighting preferences
+        OptionSet extraOptions = edge.getExtraOptionFields();
+        NumericFieldSet numericFieldSet = edge.getExtraNumericFields();
+        boolean isAudited = (extraOptions != null) || (numericFieldSet != null);
+
+        if (isAudited) {
+            LOG.info("Found audited edge {}: {}", edge.getName(), edge.getOsmId());
+
+            // prefer audited edges
+            weight *= 0.8;
+
+            // check for NIH routing params
+            if (!options.allowUnevenSurfaces) {
+                OptionAttribute slope = extraOptions.getOption(NihOption.XSLOPE);
+                if ((slope == XSlope.SLOPED)) {
+                    LOG.info("Avoiding edge {}: {} due to slope", edge.getName(), edge.getOsmId());
+                    return null;
+                }
+            }
+
+            if (options.restingPlaces) {
+                OptionAttribute rest = extraOptions.getOption(NihOption.REST);
+                if ((rest != Rest.NONE_AVAILABLE)) {
+                    LOG.info("Preferring edge {}: {} with resting place {}", edge.getName(), edge.getOsmId(), rest.getLabel());
+                    weight *= 0.01;
+                    time *= 0.01;
+                }
+            }
+
+            if (options.crowding >= 0) {
+                double crowding = options.crowding;
+                LOG.info("Have crowding preference of {}", crowding);
+                // TODO: we don't have this data yet
+            }
+
+            // set weights generally based on NIH data
+            // TODO: why do we have both "niceness" and "pleasantness"?
+            // Does having these values mean we can ignore several of the other columns (traffic, disorder, etc?)
+            if (numericFieldSet != null) {
+                EnumMap<NihNumeric, Integer> numericExtras = numericFieldSet.getNumericValues();
+                int niceness = numericExtras.get(NihNumeric.NICENESS);
+                int pleasantness = numericExtras.get(NihNumeric.PLEASANTNESS);
+                int safety = numericExtras.get(NihNumeric.SAFE_SCORE);
+                // TODO: how to weight off of these values?
+            }
+
+            OptionAttribute curbRamp = extraOptions.getOption(NihOption.CURB_RAMP);
+            OptionAttribute surface = extraOptions.getOption(NihOption.SURFACE);
+            if (options.wheelchairAccessible) {
+                if ((curbRamp == CurbRamp.NO) || (surface != Surface.CONCRETE));
+                return null;
+            }
+
+            if (curbRamp == CurbRamp.YES) {
+                // prefer audited edges with curb ramps
+                weight *= 0.8;
+            }
+
+            OptionAttribute sidewalk = extraOptions.getOption(NihOption.SIDEWALK);
+            if (sidewalk == Sidewalk.YES) {
+                // prefer audited edges with a sidewalk
+                weight *= 0.2;
+            }
+
+            OptionAttribute aesthetic = extraOptions.getOption(NihOption.AESTHETIC);
+            if (aesthetic == Aesthetics.YES) {
+                // prefer pretty edges
+                weight *= 0.5;
+            }
+        }
+        //////////////////////////////////
+
         if (edge.isStairs()) {
             weight *= options.stairsReluctance;
         } else {
@@ -206,6 +287,14 @@ public class StreetEdgeTraversal {
                 LOG.info("Found edge {}: {} has a toilet!  Changing its turn cost.", edge.getName(), edge.getId());
                 realTurnCost *= 0.001;
             }
+
+            //////////////////////////////////////////////////////////
+            // NIH turn cost preferences
+
+            // TODO: use intersections data here to set turning costs
+
+            // TODO: does it make sense to modify turning costs for any NIH request params?
+            //////////////////////////////////////////////////////////
 
             if (!traverseMode.isDriving()) {
                 s1.incrementWalkDistance(realTurnCost / 100);  // just a tie-breaker
