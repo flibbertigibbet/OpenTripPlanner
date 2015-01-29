@@ -363,7 +363,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
 
     private JCheckBox carCheckBox;
 
-    private JCheckBox cmvCheckBox;
+    private JCheckBox wheelchairCheckBox;
 
     private JTextField searchDate;
 
@@ -641,8 +641,8 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         pane.add(transitCheckBox);
         carCheckBox = new JCheckBox("car");
         pane.add(carCheckBox);
-        cmvCheckBox = new JCheckBox("custom vehicle");
-        pane.add(cmvCheckBox);
+        wheelchairCheckBox = new JCheckBox("wheelchair");
+        pane.add(wheelchairCheckBox);
 
         // row: arrive by?
         JLabel arriveByLabel = new JLabel("Arrive by?:");
@@ -1473,12 +1473,12 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         modeSet.setBicycle(bikeCheckBox.isSelected());
         modeSet.setBusish(busCheckBox.isSelected());
         modeSet.setCar(carCheckBox.isSelected());
-        modeSet.setCustomMotorVehicle(cmvCheckBox.isSelected());
         // must set generic transit mode last, and only when it is checked
         // otherwise 'false' will clear trainish and busish
         if (transitCheckBox.isSelected())
             modeSet.setTransit(true);
         RoutingRequest options = new RoutingRequest(modeSet);
+        options.setWheelchairAccessible(wheelchairCheckBox.isSelected());
 		options.setRestingPlaces(restCheckBox.isSelected());
 		options.setAllowUnevenSurfaces(allowUnevenCheckBox.isSelected());
         options.setArriveBy(arriveByCheckBox.isSelected());
