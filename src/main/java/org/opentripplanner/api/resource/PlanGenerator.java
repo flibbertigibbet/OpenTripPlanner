@@ -35,6 +35,12 @@ import org.opentripplanner.common.geometry.DirectionUtils;
 import org.opentripplanner.common.geometry.GeometryUtils;
 import org.opentripplanner.common.geometry.PackedCoordinateSequence;
 import org.opentripplanner.common.model.P2;
+import org.opentripplanner.common.model.extras.OptionAttribute;
+import org.opentripplanner.common.model.extras.OptionSet;
+import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihOptions.fields.Aesthetics;
+import org.opentripplanner.common.model.extras.nihOptions.fields.Rest;
+import org.opentripplanner.common.model.extras.nihOptions.fields.XSlope;
 import org.opentripplanner.routing.alertpatch.Alert;
 import org.opentripplanner.routing.alertpatch.AlertPatch;
 import org.opentripplanner.routing.core.RoutingContext;
@@ -385,6 +391,12 @@ public class PlanGenerator {
         leg.benches = lastState.getBenches();
         leg.toilets = lastState.getToilets();
 
+        // NIH properties
+        leg.unevenSurfaces = lastState.hasUnevenSurfaces;
+        leg.restingPlaces = lastState.passesRestingPlaces;
+        leg.aesthetic = lastState.aesthetic;
+        ///////////////////////////////////////////////
+
         addPlaces(leg, states, edges, showIntermediateStops);
 
         if (leg.isTransitLeg()) addRealTimeData(leg, states);
@@ -540,6 +552,9 @@ public class PlanGenerator {
                 case WALK:
                     itinerary.benches = state.getBenches();
                     itinerary.toilets = state.getToilets();
+                    itinerary.unevenSurfaces = state.hasUnevenSurfaces;
+                    itinerary.restingPlaces = state.passesRestingPlaces;
+                    itinerary.aesthetic = state.aesthetic;
                     itinerary.walkTime += state.getTimeDeltaSeconds();
                     break;
                 case BICYCLE:
@@ -1042,10 +1057,25 @@ public class PlanGenerator {
                 StreetEdge street = (StreetEdge) edge;
                 step.benches += street.getBenchCount();
                 step.toilets += street.getToiletCount();
-                // TODO: Make this generic and move NIH specific code out of PlanGenerator
-                if (street.getExtraNumericFields() != null || street.getExtraOptionFields() != null) {
+
+                // NIH Properties
+                OptionSet nihOptions = street.getExtraOptionFields();
+                if (nihOptions != null) {
                     step.lastAudited = new Date();
+                    OptionAttribute rest = nihOptions.getOption(NihOption.REST);
+                    if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
+                        step.rest = rest.getLabel();
+                    }
+                    OptionAttribute aesthetics = nihOptions.getOption(NihOption.AESTHETIC);
+                    if (aesthetics == Aesthetics.YES) {
+                        step.aesthetics = true;
+                    }
+                    OptionAttribute uneven = nihOptions.getOption(NihOption.XSLOPE);
+                    if (uneven == XSlope.SLOPED) {
+                        step.unevenSurfaces = true;
+                    }
                 }
+                ////////////////////////////////////////////
             }
         }
         return steps;

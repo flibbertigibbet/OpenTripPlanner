@@ -115,6 +115,14 @@ public class WalkStep {
     public int toilets;
 
     /**
+     * NIH features/hazards passed.
+     */
+    public String rest = "";
+    public boolean unevenSurfaces = false;
+    public boolean aesthetics = false;
+    /////////////////////////////////////
+
+    /**
      * Time the step was last audited, will serialize to an epoch in milliseconds
      * If null, will be blank
      */
@@ -149,6 +157,17 @@ public class WalkStep {
         if (toilets > 0) {
             str += " toilets=" + toilets;
         }
+        // NIH flags.  TODO: change strings?
+        if (aesthetics) {
+            str += " aesthetics";
+        }
+        if (rest.length() > 0) {
+            str += " resting place: " + rest;
+        }
+        if (unevenSurfaces) {
+            str += " uneven surface";
+        }
+        ////////////////////////////////////
         return str += ")";
     }
 

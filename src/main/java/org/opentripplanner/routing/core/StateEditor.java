@@ -190,6 +190,21 @@ public class StateEditor {
         this.defectiveTraversal = true;
     }
 
+    /* NIH State */
+    ////////////////////////////////////////////////////
+    public void setPassesRestingPlaces() {
+        child.passesRestingPlaces = true;
+    }
+
+    public void setHasUnevenSurfaces() {
+        child.hasUnevenSurfaces = true;
+    }
+
+    public void setIsAesthetic() {
+        child.aesthetic = true;
+    }
+    ////////////////////////////////////////////////////
+
     /* Incrementors */
     public void incrementBenchCount(int count) {
         if (count < 0) {

@@ -353,9 +353,9 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
 
     private JCheckBox bikeCheckBox;
 
-    private JCheckBox benchCheckBox;
+    private JCheckBox restCheckBox;
 
-    private JCheckBox toiletCheckBox;
+    private JCheckBox allowUnevenCheckBox;
 
     private JCheckBox busCheckBox;
 
@@ -363,7 +363,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
 
     private JCheckBox carCheckBox;
 
-    private JCheckBox cmvCheckBox;
+    private JCheckBox wheelchairCheckBox;
 
     private JTextField searchDate;
 
@@ -625,17 +625,13 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         bikeCheckBox = new JCheckBox("bike");
         pane.add(bikeCheckBox);
 
-        // @flibbertigibbet:  replacing these to replace with test checkboxes for benches/toilets
-        /*
-        trainCheckBox = new JCheckBox("trainish");
-        pane.add(trainCheckBox);
-        ferryCheckBox = new JCheckBox("ferry");
-        pane.add(ferryCheckBox);
-        */
-        benchCheckBox = new JCheckBox("Prefer benches");
-        pane.add(benchCheckBox);
-        toiletCheckBox = new JCheckBox("Prefer toilets");
-        pane.add(toiletCheckBox);
+		//////////////////////////////
+        restCheckBox = new JCheckBox("Prefer resting spots");
+        pane.add(restCheckBox);
+        allowUnevenCheckBox = new JCheckBox("Allow uneven surfaces");
+		allowUnevenCheckBox.setSelected(true);
+        pane.add(allowUnevenCheckBox);
+		/////////////////////////////
 
         busCheckBox = new JCheckBox("busish");
         pane.add(busCheckBox);
@@ -645,8 +641,8 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         pane.add(transitCheckBox);
         carCheckBox = new JCheckBox("car");
         pane.add(carCheckBox);
-        cmvCheckBox = new JCheckBox("custom vehicle");
-        pane.add(cmvCheckBox);
+        wheelchairCheckBox = new JCheckBox("wheelchair");
+        pane.add(wheelchairCheckBox);
 
         // row: arrive by?
         JLabel arriveByLabel = new JLabel("Arrive by?:");
@@ -1477,14 +1473,14 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         modeSet.setBicycle(bikeCheckBox.isSelected());
         modeSet.setBusish(busCheckBox.isSelected());
         modeSet.setCar(carCheckBox.isSelected());
-        modeSet.setCustomMotorVehicle(cmvCheckBox.isSelected());
         // must set generic transit mode last, and only when it is checked
         // otherwise 'false' will clear trainish and busish
         if (transitCheckBox.isSelected())
             modeSet.setTransit(true);
         RoutingRequest options = new RoutingRequest(modeSet);
-        options.setPreferBenches(benchCheckBox.isSelected());
-        options.setPreferToilets(toiletCheckBox.isSelected());
+        options.setWheelchairAccessible(wheelchairCheckBox.isSelected());
+		options.setRestingPlaces(restCheckBox.isSelected());
+		options.setAllowUnevenSurfaces(allowUnevenCheckBox.isSelected());
         options.setArriveBy(arriveByCheckBox.isSelected());
         options.setWalkBoardCost(Integer.parseInt(boardingPenaltyField.getText()) * 60); // override low 2-4 minute values
         // TODO LG Add ui element for bike board cost (for now bike = 2 * walk)

@@ -161,6 +161,22 @@ public class Leg {
     public Integer toilets = 0;
 
     /**
+    * NIH features/hazards passed
+    */
+    @XmlAttribute
+    @JsonSerialize
+    public Boolean restingPlaces = false;
+
+    @XmlAttribute
+    @JsonSerialize
+    public Boolean unevenSurfaces = false;
+
+    @XmlAttribute
+    @JsonSerialize
+    public Boolean aesthetic = false;
+    /////////////////////////////////////////
+
+    /**
      * For transit leg, the trip's short name (if one exists). For non-transit legs, null.
      */
     @XmlAttribute

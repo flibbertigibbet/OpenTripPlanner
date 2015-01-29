@@ -33,6 +33,7 @@ import org.opentripplanner.api.parameter.QualifiedModeSetSequence;
 import org.opentripplanner.common.MavenVersion;
 import org.opentripplanner.common.model.GenericLocation;
 import org.opentripplanner.common.model.NamedPlace;
+import org.opentripplanner.common.model.P2;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
@@ -315,6 +316,13 @@ public class RoutingRequest implements Cloneable, Serializable {
     public boolean preferBenches = false;
     public boolean preferToilets = false;
 
+    ////////////////////////////////////////
+    /* NIH preferences */
+    public boolean allowUnevenSurfaces = true;
+    public boolean restingPlaces = false;
+    public double crowding = -1;
+    ////////////////////////////////////////
+
     /** This is true when a GraphPath is being traversed in reverse for optimization purposes. */
     public boolean reverseOptimizing = false;
 
@@ -519,6 +527,29 @@ public class RoutingRequest implements Cloneable, Serializable {
         if (toilets) LOG.info("Going to prefer toilets");
         this.preferToilets = toilets;
     }
+
+    ///////////////////////////////////////////////////
+    /* NIH preferences */
+    public void setAllowUnevenSurfaces(boolean allowUnevenSurfaces) {
+        if (!allowUnevenSurfaces) LOG.info("Going to avoid uneven surfaces");
+        this.allowUnevenSurfaces = allowUnevenSurfaces;
+    }
+
+    public void setRestingPlaces(boolean restingPlaces) {
+        if (restingPlaces) LOG.info("Going to prefer passing resting places");
+        this.restingPlaces = restingPlaces;
+    }
+
+    public void setCrowding(double crowding) {
+        if (crowding > 1) {
+            LOG.warn("Invalid crowding value of {} passed in; correcting to 1 (range of 0 to 1)");
+            this.crowding = 1;
+            return;
+        }
+        if (crowding >= 0) LOG.info("Setting crowding preference to {}", crowding);
+        this.crowding = crowding;
+    }
+    ///////////////////////////////////////////////////
 
     /**
      * only allow traversal by the specified mode; don't allow walking bikes. This is used during contraction to reduce the number of possible paths.
@@ -730,16 +761,47 @@ public class RoutingRequest implements Cloneable, Serializable {
     }
 
     public String toString(String sep) {
-        String str = from + sep + to + sep + getMaxWalkDistance() + sep + getDateTime() + sep
-                + arriveBy + sep + optimize + sep + modes.getAsStr() + sep
-                + getNumItineraries();
+        StringBuilder sb = new StringBuilder();
+        sb.append(from);
+        sb.append(sep);
+        sb.append(to);
+        sb.append(sep);
+        sb.append(getMaxWalkDistance());
+        sb.append(sep);
+        sb.append(getDateTime());
+        sb.append(sep);
+        sb.append(arriveBy);
+        sb.append(sep);
+        sb.append(optimize);
+        sb.append(modes.getAsStr());
+        sb.append(sep);
+        sb.append(getNumItineraries());
+
         if (preferBenches) {
-            str += " preferBenches";
+            sb.append(sep);
+            sb.append("preferBenches");
         }
         if (preferToilets) {
-            str += " preferToilets";
+            sb.append(sep);
+            sb.append("preferToilets");
         }
-        return str;
+        if (!allowUnevenSurfaces) {
+            sb.append(sep);
+            sb.append("avoid uneven surfaces");
+        }
+        if (restingPlaces) {
+            sb.append(sep);
+            sb.append("seeking resting places");
+        }
+
+        if (crowding >= 0) {
+            sb.append(sep);
+            sb.append("crowding");
+            sb.append(sep);
+            sb.append(crowding);
+        }
+
+        return sb.toString();
     }
 
     public void removeMode(TraverseMode mode) {
@@ -932,6 +994,9 @@ public class RoutingRequest implements Cloneable, Serializable {
                 && wheelchairAccessible == other.wheelchairAccessible
                 && preferBenches == other.preferBenches
                 && preferToilets == other.preferToilets
+                && allowUnevenSurfaces == other.allowUnevenSurfaces
+                && crowding == other.crowding
+                && restingPlaces == other.restingPlaces
                 && optimize.equals(other.optimize)
                 && maxWalkDistance == other.maxWalkDistance
                 && maxPreTransitTime == other.maxPreTransitTime
@@ -989,6 +1054,8 @@ public class RoutingRequest implements Cloneable, Serializable {
                 + (int) (worstTime & 0xffffffff) + modes.hashCode()
                 + (arriveBy ? 8966786 : 0) + (wheelchairAccessible ? 731980 : 0)
                 + (preferBenches ? 1300727 : 0) + (preferToilets ? 1301081 :0)
+                + new Double(crowding).hashCode() + (allowUnevenSurfaces ? 1301023 : 0)
+                + (restingPlaces ? 1301077 : 0)
                 + optimize.hashCode() + new Double(maxWalkDistance).hashCode()
                 + new Double(transferPenalty).hashCode() + new Double(maxSlope).hashCode()
                 + new Double(walkReluctance).hashCode() + new Double(waitReluctance).hashCode()

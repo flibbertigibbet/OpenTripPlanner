@@ -1,5 +1,11 @@
 package org.opentripplanner.routing.edgetype;
 
+import org.opentripplanner.common.model.extras.NumericFieldSet;
+import org.opentripplanner.common.model.extras.OptionAttribute;
+import org.opentripplanner.common.model.extras.OptionSet;
+import org.opentripplanner.common.model.extras.nihOptions.NihNumeric;
+import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihOptions.fields.*;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.core.StateEditor;
@@ -11,6 +17,8 @@ import org.opentripplanner.routing.vertextype.IntersectionVertex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.EnumMap;
+
 /**
  * Created by kathrynkillebrew on 1/23/15.
  */
@@ -20,12 +28,20 @@ public class StreetEdgeTraversal {
 
     private static final double GREENWAY_SAFETY_FACTOR = 0.1;
 
+    private StreetEdge edge;
+    private State state;
+
+    public StreetEdgeTraversal(StreetEdge edge, State state) {
+        this.edge = edge;
+        this.state = state;
+    }
+
     /** return a StateEditor rather than a State so that we can make parking/mode switch modifications for kiss-and-ride. */
-    public static StateEditor doTraverse(StreetEdge edge, State s0, RoutingRequest options, TraverseMode traverseMode) {
+    public StateEditor doTraverse(RoutingRequest options, TraverseMode traverseMode) {
         boolean walkingBike = options.walkingBike;
-        boolean backWalkingBike = s0.isBackWalkingBike();
-        TraverseMode backMode = s0.getBackMode();
-        Edge backEdge = s0.getBackEdge();
+        boolean backWalkingBike = state.isBackWalkingBike();
+        TraverseMode backMode = state.getBackMode();
+        Edge backEdge = state.getBackEdge();
         if (backEdge != null) {
             // No illegal U-turns.
             // NOTE(flamholz): we check both directions because both edges get a chance to decide
@@ -45,7 +61,7 @@ public class StreetEdgeTraversal {
         /* Check whether this street allows the current mode. If not and we are biking, attempt to walk the bike. */
         if (!edge.canTraverse(options, traverseMode)) {
             if (traverseMode == TraverseMode.BICYCLE) {
-                return doTraverse(edge, s0, options.bikeWalkingOptions, TraverseMode.WALK);
+                return doTraverse(options.bikeWalkingOptions, TraverseMode.WALK);
             }
             return null;
         }
@@ -129,6 +145,93 @@ public class StreetEdgeTraversal {
             time *= 0.001;
         }
 
+        StateEditor s1 = state.edit(edge);
+        s1.setBackMode(traverseMode);
+        s1.setBackWalkingBike(walkingBike);
+
+        ///////////////////////////////////
+        // NIH weighting preferences
+        OptionSet extraOptions = edge.getExtraOptionFields();
+        NumericFieldSet numericFieldSet = edge.getExtraNumericFields();
+        boolean isAudited = (extraOptions != null) || (numericFieldSet != null);
+
+        if (isAudited) {
+            LOG.info("Found audited edge {}: {}", edge.getName(), edge.getOsmId());
+
+            // prefer audited edges
+            weight *= 0.8;
+
+            // check for NIH routing params
+            OptionAttribute slope = extraOptions.getOption(NihOption.XSLOPE);
+            if ((slope != null) && (slope == XSlope.SLOPED)) {
+                s1.setHasUnevenSurfaces(); // mark state
+                if (!options.allowUnevenSurfaces) {
+                    LOG.info("Avoiding edge {}: {} due to slope", edge.getName(), edge.getOsmId());
+                    return null;
+                }
+            }
+
+
+            OptionAttribute rest = extraOptions.getOption(NihOption.REST);
+            if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
+                s1.setPassesRestingPlaces(); // mark state
+                if (options.restingPlaces) {
+                    LOG.info("Preferring edge {}: {} with resting place {}", edge.getName(), edge.getOsmId(), rest.getLabel());
+                    weight *= 0.01;
+                    time *= 0.01;
+                }
+            }
+
+            if (options.crowding >= 0) {
+                double crowding = options.crowding;
+                LOG.info("Have crowding preference of {}", crowding);
+                // TODO: we don't have this data yet
+            }
+
+            // set weights generally based on NIH data
+            // TODO: why do we have both "niceness" and "pleasantness"?
+            // Does having these values mean we can ignore several of the other columns (traffic, disorder, etc?)
+            if (numericFieldSet != null) {
+                EnumMap<NihNumeric, Integer> numericExtras = numericFieldSet.getNumericValues();
+                int niceness = numericExtras.get(NihNumeric.NICENESS);
+                int pleasantness = numericExtras.get(NihNumeric.PLEASANTNESS);
+                int safety = numericExtras.get(NihNumeric.SAFE_SCORE);
+                // TODO: how to weight off of these values?
+            }
+
+            OptionAttribute curbRamp = extraOptions.getOption(NihOption.CURB_RAMP);
+            OptionAttribute surface = extraOptions.getOption(NihOption.SURFACE);
+            if (options.wheelchairAccessible) {
+                if ( (curbRamp == CurbRamp.NO) || ((surface != null) && (surface != Surface.CONCRETE)) ) {
+                    return null;
+                }
+            }
+
+            if (curbRamp == CurbRamp.YES) {
+                // prefer audited edges with curb ramps
+                weight *= 0.8;
+            }
+
+            OptionAttribute sidewalk = extraOptions.getOption(NihOption.SIDEWALK);
+            if (sidewalk == Sidewalk.YES) {
+                // prefer audited edges with a sidewalk
+                weight *= 0.2;
+            }
+
+            OptionAttribute aesthetic = extraOptions.getOption(NihOption.AESTHETIC);
+            if (aesthetic == Aesthetics.YES) {
+                // prefer pretty edges
+                weight *= 0.5;
+                s1.setIsAesthetic(); // mark state
+            }
+        }
+        //////////////////////////////////
+
+        // accumulate feature counts
+        s1.incrementBenchCount(edge.getBenchCount());
+        s1.incrementToiletCount(edge.getToiletCount());
+        ////////////////////////////////////////
+
         if (edge.isStairs()) {
             weight *= options.stairsReluctance;
         } else {
@@ -136,23 +239,19 @@ public class StreetEdgeTraversal {
             weight *= options.walkReluctance;
         }
 
-        StateEditor s1 = s0.edit(edge);
-        s1.setBackMode(traverseMode);
-        s1.setBackWalkingBike(walkingBike);
-
         /* Compute turn cost. */
         StreetEdge backPSE;
         if (backEdge != null && backEdge instanceof StreetEdge) {
             backPSE = (StreetEdge) backEdge;
             RoutingRequest backOptions = backWalkingBike ?
-                    s0.getOptions().bikeWalkingOptions : s0.getOptions();
+                    state.getOptions().bikeWalkingOptions : state.getOptions();
             double backSpeed = backPSE.calculateSpeed(backOptions, backMode);
             double realTurnCost;  // Units are seconds.
 
             // Apply turn restrictions
-            if (options.arriveBy && !edge.canTurnOnto(backPSE, s0, backMode)) {
+            if (options.arriveBy && !edge.canTurnOnto(backPSE, state, backMode)) {
                 return null;
-            } else if (!options.arriveBy && !backPSE.canTurnOnto(edge, s0, traverseMode)) {
+            } else if (!options.arriveBy && !backPSE.canTurnOnto(edge, state, traverseMode)) {
                 return null;
             }
 
@@ -199,6 +298,14 @@ public class StreetEdgeTraversal {
                 realTurnCost *= 0.001;
             }
 
+            //////////////////////////////////////////////////////////
+            // NIH turn cost preferences
+
+            // TODO: use intersections data here to set turning costs
+
+            // TODO: does it make sense to modify turning costs for any NIH request params?
+            //////////////////////////////////////////////////////////
+
             if (!traverseMode.isDriving()) {
                 s1.incrementWalkDistance(realTurnCost / 100);  // just a tie-breaker
             }
@@ -220,21 +327,17 @@ public class StreetEdgeTraversal {
             s1.incrementWalkDistance(edge.getDistance());
         }
 
-        // accumulate feature counts
-        s1.incrementBenchCount(edge.getBenchCount());
-        s1.incrementToiletCount(edge.getToiletCount());
-
         /* On the pre-kiss/pre-park leg, limit both walking and driving, either soft or hard. */
         int roundedTime = (int) Math.ceil(time);
         if (options.kissAndRide || options.parkAndRide) {
             if (options.arriveBy) {
-                if (!s0.isCarParked()) s1.incrementPreTransitTime(roundedTime);
+                if (!state.isCarParked()) s1.incrementPreTransitTime(roundedTime);
             } else {
-                if (!s0.isEverBoarded()) s1.incrementPreTransitTime(roundedTime);
+                if (!state.isEverBoarded()) s1.incrementPreTransitTime(roundedTime);
             }
             if (s1.isMaxPreTransitTimeExceeded(options)) {
                 if (options.softPreTransitLimiting) {
-                    weight += calculateOverageWeight(s0.getPreTransitTime(), s1.getPreTransitTime(),
+                    weight += calculateOverageWeight(state.getPreTransitTime(), s1.getPreTransitTime(),
                             options.maxPreTransitTime, options.preTransitPenalty,
                             options.preTransitOverageRate);
                 } else return null;
@@ -247,7 +350,7 @@ public class StreetEdgeTraversal {
             // if we're using a soft walk-limit
             if( options.softWalkLimiting ){
                 // just slap a penalty for the overage onto s1
-                weight += calculateOverageWeight(s0.getWalkDistance(), s1.getWalkDistance(),
+                weight += calculateOverageWeight(state.getWalkDistance(), s1.getWalkDistance(),
                         options.getMaxWalkDistance(), options.softWalkPenalty,
                         options.softWalkOverageRate);
             } else {

@@ -43,6 +43,7 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
 
     private static boolean preferBenches;
     private static boolean preferToilets;
+    private static boolean restingPlaces;
 
     private static final Logger LOG = LoggerFactory.getLogger(MultiShortestPathTree.class);
 
@@ -75,6 +76,7 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
         super(options);
         preferBenches = options.preferBenches;
         preferToilets = options.preferToilets;
+        restingPlaces = options.restingPlaces;
         stateSets = new IdentityHashMap<Vertex, List<State>>();
     }
 
@@ -133,19 +135,6 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
         if (thisState.isBikeParked() != other.isBikeParked())
             return false;
 
-        ///////////////
-        // TODO: It would probably be better to come up with some kind of "is hopeful" measurement
-        // below for deciding when/if to dominate in feature-preference mode; otherwise,
-        // it's possible to wind up going round and round loops looking for paths through them,
-        // until the query times out. However, it's good to explore more paths in
-        // feature-preference mode, in order to discover more paths with features on them.
-        ///////////////////
-        if (preferBenches && (thisState.hasBenches() || other.hasBenches()))
-            return false;
-        if (preferToilets && (thisState.hasToilets() || other.hasToilets()))
-            return false;
-        ///////////////////
-
         Graph graph = thisState.getOptions().rctx.graph;
         if (thisState.backEdge != other.getBackEdge() && ((thisState.backEdge instanceof StreetEdge)
                 && (!graph.getTurnRestrictions(thisState.backEdge).isEmpty())))
@@ -157,6 +146,22 @@ public class MultiShortestPathTree extends AbstractShortestPathTree {
             		thisState.getElapsedTimeSeconds() <= other.getElapsedTimeSeconds();
             // && this.getNumBoardings() <= other.getNumBoardings();
         }
+
+        ///////////////
+        // TODO: It would probably be better to come up with some kind of "is hopeful" measurement
+        // below for deciding when/if to dominate in feature-preference mode; otherwise,
+        // it's possible to wind up going round and round loops looking for paths through them,
+        // until the query times out. However, it's good to explore more paths in
+        // feature-preference mode, in order to discover more paths with features on them.
+        ///////////////////
+        if (preferBenches && (thisState.hasBenches() || other.hasBenches()))
+            return false;
+        if (preferToilets && (thisState.hasToilets() || other.hasToilets()))
+            return false;
+
+        if (restingPlaces && (!thisState.passesRestingPlaces && !other.passesRestingPlaces))
+            return false;
+        /////////////////////////////////////////////////////////////////////////////////////
 
         // If returning more than one result from GenericAStar, the search can be very slow
         // unless you replace the following code with:

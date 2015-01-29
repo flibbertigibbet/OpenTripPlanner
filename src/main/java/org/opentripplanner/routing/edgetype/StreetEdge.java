@@ -241,7 +241,8 @@ public class StreetEdge extends Edge implements Cloneable {
     public State traverse(State s0) {
         final RoutingRequest options = s0.getOptions();
         final TraverseMode currMode = s0.getNonTransitMode();
-        StateEditor editor = StreetEdgeTraversal.doTraverse(this, s0, options, s0.getNonTransitMode());
+        final StreetEdgeTraversal traversal = new StreetEdgeTraversal(this, s0);
+        StateEditor editor = traversal.doTraverse(options, s0.getNonTransitMode());
         State state = (editor == null) ? null : editor.makeState();
         /* Kiss and ride support. Mode transitions occur without the explicit loop edges used in park-and-ride. */
         if (options.kissAndRide) {
@@ -249,7 +250,7 @@ public class StreetEdge extends Edge implements Cloneable {
                 // Branch search to "unparked" CAR mode ASAP after transit has been used.
                 // Final WALK check prevents infinite recursion.
                 if (s0.isCarParked() && s0.isEverBoarded() && currMode == TraverseMode.WALK) {
-                    editor = StreetEdgeTraversal.doTraverse(this, s0, options, TraverseMode.CAR);
+                    editor = traversal.doTraverse(options, TraverseMode.CAR);
                     if (editor != null) {
                         editor.setCarParked(false); // Also has the effect of switching to CAR
                         State forkState = editor.makeState();
@@ -263,7 +264,7 @@ public class StreetEdge extends Edge implements Cloneable {
                 // Irrevocable transition from driving to walking. "Parking" means being dropped off in this case.
                 // Final CAR check needed to prevent infinite recursion.
                 if ( ! s0.isCarParked() && ! getPermission().allows(TraverseMode.CAR) && currMode == TraverseMode.CAR) {
-                    editor = StreetEdgeTraversal.doTraverse(this, s0, options, TraverseMode.WALK);
+                    editor = traversal.doTraverse(options, TraverseMode.WALK);
                     if (editor != null) {
                         editor.setCarParked(true); // has the effect of switching to WALK and preventing further car use
                         return editor.makeState(); // return only the "parked" walking state
