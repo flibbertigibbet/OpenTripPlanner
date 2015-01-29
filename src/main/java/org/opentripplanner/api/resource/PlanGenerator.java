@@ -1077,6 +1077,8 @@ public class PlanGenerator {
                 }
                 ////////////////////////////////////////////
             }
+            // step geometry
+            step.stepGeometry = PolylineEncoder.createEncodings(edge.getGeometry());
         }
         return steps;
     }

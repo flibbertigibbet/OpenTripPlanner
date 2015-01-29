@@ -27,6 +27,7 @@ import org.opentripplanner.common.model.P2;
 import org.opentripplanner.routing.alertpatch.Alert;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.opentripplanner.util.model.EncodedPolylineBean;
 
 /**
  * Represents one instruction in walking directions. Three examples from New York City:
@@ -120,6 +121,9 @@ public class WalkStep {
     public String rest = "";
     public boolean unevenSurfaces = false;
     public boolean aesthetics = false;
+
+    // individual step geometry
+    public EncodedPolylineBean stepGeometry;
     /////////////////////////////////////
 
     /**
