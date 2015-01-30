@@ -785,6 +785,7 @@ public class PlanGenerator {
     public static List<WalkStep> generateWalkSteps(Graph graph, State[] states, WalkStep previous) {
         List<WalkStep> steps = new ArrayList<WalkStep>();
         WalkStep step = null;
+        CoordinateArrayListSequence stepCoords = new CoordinateArrayListSequence();
         double lastAngle = 0, distance = 0; // distance used for appending elevation profiles
         int roundaboutExit = 0; // track whether we are in a roundabout, and if so the exit number
         String roundaboutPreviousStreet = null;
@@ -1052,33 +1053,15 @@ public class PlanGenerator {
             step.addAlerts(graph.streetNotesService.getNotes(forwardState));
             lastAngle = DirectionUtils.getLastAngle(geom);
 
-            // Put feature counts on walking directions
-            if (edge instanceof StreetEdge) {
-                StreetEdge street = (StreetEdge) edge;
-                step.benches += street.getBenchCount();
-                step.toilets += street.getToiletCount();
-
-                // NIH Properties
-                OptionSet nihOptions = street.getExtraOptionFields();
-                if (nihOptions != null) {
-                    step.lastAudited = new Date();
-                    OptionAttribute rest = nihOptions.getOption(NihOption.REST);
-                    if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
-                        step.rest = rest.getLabel();
-                    }
-                    OptionAttribute aesthetics = nihOptions.getOption(NihOption.AESTHETIC);
-                    if (aesthetics == Aesthetics.YES) {
-                        step.aesthetics = true;
-                    }
-                    OptionAttribute uneven = nihOptions.getOption(NihOption.XSLOPE);
-                    if (uneven == XSlope.SLOPED) {
-                        step.unevenSurfaces = true;
-                    }
-                }
-                ////////////////////////////////////////////
+            if (createdNewStep) {
+                stepCoords.clear();
+                stepCoords.extend(geom.getCoordinates(), 0);
+            } else {
+                stepCoords.extend(geom.getCoordinates(), 1);
             }
-            // step geometry
-            step.stepGeometry = PolylineEncoder.createEncodings(edge.getGeometry());
+
+            Geometry lineString = GeometryUtils.getGeometryFactory().createLineString(stepCoords);
+            step.stepGeometry = PolylineEncoder.createEncodings(lineString);
         }
         return steps;
     }
@@ -1113,7 +1096,29 @@ public class PlanGenerator {
         step.angle = DirectionUtils.getFirstAngle(en.getGeometry());
         if (en instanceof AreaEdge) {
             step.area = true;
-        }
+        } else if (en instanceof StreetEdge) {
+                StreetEdge street = (StreetEdge) en;
+                step.benches += street.getBenchCount();
+                step.toilets += street.getToiletCount();
+
+                // NIH Properties
+                OptionSet nihOptions = street.getExtraOptionFields();
+                if (nihOptions != null) {
+                    step.lastAudited = new Date();
+                    OptionAttribute rest = nihOptions.getOption(NihOption.REST);
+                    if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
+                        step.rest = rest.getLabel();
+                    }
+                    OptionAttribute aesthetics = nihOptions.getOption(NihOption.AESTHETIC);
+                    if (aesthetics == Aesthetics.YES) {
+                        step.aesthetics = true;
+                    }
+                    OptionAttribute uneven = nihOptions.getOption(NihOption.XSLOPE);
+                    if (uneven == XSlope.SLOPED) {
+                        step.unevenSurfaces = true;
+                    }
+                }
+            }
         return step;
     }
 
