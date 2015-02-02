@@ -323,7 +323,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
 		}
 		public String toString(){
             // also dump path to console whenever this is called
-            gp.dump();
+            //gp.dump();
 			SimpleDateFormat shortDateFormat = new SimpleDateFormat("HH:mm:ss z");
 			String startTime = shortDateFormat.format(new Date(gp.getStartTime()*1000));
 			String endTime = shortDateFormat.format(new Date(gp.getEndTime()*1000));
@@ -369,7 +369,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
 
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
 
-    private JTextField boardingPenaltyField;
+    //private JTextField boardingPenaltyField;
 
     private DefaultListModel<GraphBuilderAnnotation> annotationMatchesModel;
 
@@ -403,7 +403,14 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
 
 	private ButtonGroup optimizeTypeGrp;
 
-	private JTextField maxWalkField;
+	//private JTextField maxWalkField;
+
+    ///////////////////////////////
+    // NIH number fields
+    private JTextField crowding;
+    private JTextField steepnessFactor;
+
+    ///////////////////////////////
 
 	private JTextField walkSpeed;
 
@@ -650,6 +657,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         arriveByCheckBox = new JCheckBox("arrive by");
         pane.add(arriveByCheckBox);
 
+        /*
         // row: boarding penalty
         JLabel boardPenaltyLabel = new JLabel("Boarding penalty (min):");
         pane.add(boardPenaltyLabel);
@@ -661,6 +669,21 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         pane.add(maxWalkLabel);
         maxWalkField = new JTextField("5000");
         pane.add(maxWalkField);
+        */
+
+        /////////////////////////////////////
+        // row crowding amount
+        JLabel crowdingLabel = new JLabel("Crowding (-1: avoid; 0, unimportant; 1: seek)");
+        pane.add(crowdingLabel);
+        crowding = new JTextField("0");
+        pane.add(crowding);
+
+        // row: steepness amount
+        JLabel steepnessLabel = new JLabel("Steepness (0 (normal weighting) to 1 (strongly avoid)");
+        pane.add(steepnessLabel);
+        steepnessFactor = new JTextField("0");
+        pane.add(steepnessFactor);
+        ////////////////////////////////////////////////////
 
         // row: walk speed
         JLabel walkSpeedLabel = new JLabel("Walk speed (m/s):");
@@ -1482,13 +1505,16 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
 		options.setRestingPlaces(restCheckBox.isSelected());
 		options.setAllowUnevenSurfaces(allowUnevenCheckBox.isSelected());
         options.setArriveBy(arriveByCheckBox.isSelected());
-        options.setWalkBoardCost(Integer.parseInt(boardingPenaltyField.getText()) * 60); // override low 2-4 minute values
+        //options.setWalkBoardCost(Integer.parseInt(boardingPenaltyField.getText()) * 60); // override low 2-4 minute values
         // TODO LG Add ui element for bike board cost (for now bike = 2 * walk)
-        options.setBikeBoardCost(Integer.parseInt(boardingPenaltyField.getText()) * 60 * 2);
+        //options.setBikeBoardCost(Integer.parseInt(boardingPenaltyField.getText()) * 60 * 2);
         // there should be a ui element for walk distance and optimize type
         options.setOptimize( getSelectedOptimizeType() );
-        options.setMaxWalkDistance(Integer.parseInt(maxWalkField.getText()));
-        options.setDateTime(when);
+        //options.setMaxWalkDistance(Integer.parseInt(maxWalkField.getText()));
+        options.setSteepnessFactor(Float.parseFloat(steepnessFactor.getText()));
+        options.setCrowding(Float.parseFloat(crowding.getText()));
+        //////////////////////////
+        options.setMaxWalkDistance(999999999);
         options.setFromString(from);
         options.setToString(to);
         options.walkSpeed = Float.parseFloat(walkSpeed.getText());
