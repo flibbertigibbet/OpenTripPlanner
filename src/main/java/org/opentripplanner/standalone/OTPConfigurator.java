@@ -29,6 +29,7 @@ import org.opentripplanner.graph_builder.impl.StreetlessStopLinker;
 import org.opentripplanner.graph_builder.impl.TransitToStreetNetworkGraphBuilderImpl;
 import org.opentripplanner.graph_builder.impl.TransitToTaggedStopsGraphBuilderImpl;
 import org.opentripplanner.graph_builder.impl.ned.ElevationGraphBuilderImpl;
+import org.opentripplanner.graph_builder.impl.ned.GeotiffGridCoverageFactoryImpl;
 import org.opentripplanner.graph_builder.impl.ned.NEDGridCoverageFactoryImpl;
 import org.opentripplanner.graph_builder.impl.osm.DefaultWayPropertySetSource;
 import org.opentripplanner.graph_builder.impl.osm.OpenStreetMapGraphBuilderImpl;
@@ -55,17 +56,17 @@ import com.google.common.collect.Lists;
 public class OTPConfigurator {
 
     private static final Logger LOG = LoggerFactory.getLogger(OTPConfigurator.class);
-    
+
     private final CommandLineParameters params;
-    
+
     private GraphService graphService = null;
-    
+
     public OTPConfigurator (CommandLineParameters params) {
         this.params = params;
     }
 
     private OTPServer server;
-    
+
     /**
      * We could even do this at Configurator construct time (rather than lazy initializing), using
      * the inMemory param to create the right kind of GraphService ahead of time. However that
@@ -118,7 +119,7 @@ public class OTPConfigurator {
         }
         return graphService;
     }
-    
+
     public GraphBuilderTask builderFromParameters() {
         if (params.build == null || params.build.isEmpty()) {
             return null;
@@ -127,6 +128,7 @@ public class OTPConfigurator {
         GraphBuilderTask graphBuilder = new GraphBuilderTask();
         List<File> gtfsFiles = Lists.newArrayList();
         List<File> osmFiles =  Lists.newArrayList();
+        List<File> elevationFiles = Lists.newArrayList();
         File configFile = null;
         /* For now this is adding files from all directories listed, rather than building multiple graphs. */
         for (File dir : params.build) {
@@ -146,6 +148,10 @@ public class OTPConfigurator {
                     LOG.info("Found OSM file {}", file);
                     osmFiles.add(file);
                     break;
+                case ELEVATION:
+                    LOG.info("Found ELEVATION file {}", file);
+                    elevationFiles.add(file);
+                    break;
                 case CONFIG:
                     if (!params.noEmbedConfig) {
                         LOG.info("Found CONFIG file {}", file);
@@ -159,6 +165,7 @@ public class OTPConfigurator {
         }
         boolean hasOSM  = ! (osmFiles.isEmpty()  || params.noStreets);
         boolean hasGTFS = ! (gtfsFiles.isEmpty() || params.noTransit);
+        boolean hasElevation = !elevationFiles.isEmpty();
         if ( ! (hasOSM || hasGTFS )) {
             LOG.error("Found no input files from which to build a graph in {}", params.build.toString());
             return null;
@@ -171,12 +178,21 @@ public class OTPConfigurator {
             }
             OpenStreetMapGraphBuilderImpl osmBuilder = new OpenStreetMapGraphBuilderImpl(osmProviders);
             DefaultStreetEdgeFactory streetEdgeFactory = new DefaultStreetEdgeFactory();
-            streetEdgeFactory.useElevationData = params.elevation;
+            streetEdgeFactory.useElevationData = hasElevation;
             osmBuilder.edgeFactory = streetEdgeFactory;
             DefaultWayPropertySetSource defaultWayPropertySetSource = new DefaultWayPropertySetSource();
             osmBuilder.setDefaultWayPropertySetSource(defaultWayPropertySetSource);
             osmBuilder.skipVisibility = params.skipVisibility;
             graphBuilder.addGraphBuilder(osmBuilder);
+            if ( hasElevation ) {
+                if (elevationFiles.size() > 1) {
+                    LOG.warn("More than one elevation file found!  Only using first one, {}.", elevationFiles.get(0));
+                }
+                ElevationGridCoverageFactory gcf = new GeotiffGridCoverageFactoryImpl(elevationFiles.get(0));
+                GraphBuilder elevationBuilder = new ElevationGraphBuilderImpl(gcf);
+                graphBuilder.addGraphBuilder(elevationBuilder);
+            }
+            graphBuilder.addGraphBuilder(new TransitToStreetNetworkGraphBuilderImpl());
             graphBuilder.addGraphBuilder(new PruneFloatingIslands());
         }
         if ( hasGTFS ) {
@@ -201,10 +217,9 @@ public class OTPConfigurator {
                         graphBuilder.addGraphBuilder(new StreetlessStopLinker());
                     }
                 }
-            } 
+            }
             if ( hasOSM ) {
                 graphBuilder.addGraphBuilder(new TransitToTaggedStopsGraphBuilderImpl());
-                graphBuilder.addGraphBuilder(new TransitToStreetNetworkGraphBuilderImpl());
                 // The stops can be linked to each other once they have links to the street network.
                 if (params.longDistance && params.useStreetsForLinking && !params.useTransfersTxt) {
                     graphBuilder.addGraphBuilder(new StreetfulStopLinker());
@@ -233,7 +248,7 @@ public class OTPConfigurator {
             return server;
         } else return null;
     }
-    
+
     public GraphVisualizer visualizerFromParameters() {
         if (params.visualize) {
             // FIXME get OTPServer into visualizer.
@@ -242,12 +257,12 @@ public class OTPConfigurator {
             return visualizer;
         } else return null;
     }
-    
+
     /**
      * Represents the different types of input files for a graph build.
      */
     private static enum InputFileType {
-        GTFS, OSM, CONFIG, OTHER;
+        GTFS, OSM, CONFIG, ELEVATION, OTHER;
         public static InputFileType forFile(File file) {
             String name = file.getName();
             if (name.endsWith(".zip")) {
@@ -261,6 +276,7 @@ public class OTPConfigurator {
             if (name.endsWith(".pbf")) return OSM;
             if (name.endsWith(".osm")) return OSM;
             if (name.endsWith(".osm.xml")) return OSM;
+            if (name.endsWith(".tif")) return ELEVATION;
             if (name.equals("Embed.properties")) return CONFIG;
             return OTHER;
         }
