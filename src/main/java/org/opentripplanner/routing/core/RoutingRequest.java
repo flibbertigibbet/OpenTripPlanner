@@ -320,7 +320,8 @@ public class RoutingRequest implements Cloneable, Serializable {
     /* NIH preferences */
     public boolean allowUnevenSurfaces = true;
     public boolean restingPlaces = false;
-    public double crowding = -1;
+    public double crowding = 0;
+    public double steepnessFactor = 0;
     ////////////////////////////////////////
 
     /** This is true when a GraphPath is being traversed in reverse for optimization purposes. */
@@ -542,12 +543,30 @@ public class RoutingRequest implements Cloneable, Serializable {
 
     public void setCrowding(double crowding) {
         if (crowding > 1) {
-            LOG.warn("Invalid crowding value of {} passed in; correcting to 1 (range of 0 to 1)");
+            LOG.warn("Invalid crowding value of {} passed in; correcting to 1 (range of -1 to 1)");
             this.crowding = 1;
+            return;
+        } else if (crowding < -1) {
+            LOG.warn("Invalid crowding value of {} passed in; correcting to -1 (range of -1 to 1)");
+            this.crowding = -1;
             return;
         }
         if (crowding >= 0) LOG.info("Setting crowding preference to {}", crowding);
         this.crowding = crowding;
+    }
+
+    public void setSteepnessFactor(double steepnessFactor) {
+        if (steepnessFactor > 1) {
+            LOG.warn("Invalid steepness factor value of {} passed in; correcting to 1 (range of 0 to 1)");
+            this.steepnessFactor = 1;
+            return;
+        } else if (steepnessFactor < 0) {
+            LOG.warn("Invalid steepness factor value of {} passed in; correcting to 0 (range of 0 to 1)");
+            this.steepnessFactor = 0;
+            return;
+        }
+        if (steepnessFactor > 0) LOG.info("Setting steepness factor to {}", steepnessFactor);
+        this.steepnessFactor = steepnessFactor;
     }
     ///////////////////////////////////////////////////
 
@@ -794,7 +813,7 @@ public class RoutingRequest implements Cloneable, Serializable {
             sb.append("seeking resting places");
         }
 
-        if (crowding >= 0) {
+        if (crowding != 0) {
             sb.append(sep);
             sb.append("crowding");
             sb.append(sep);
@@ -996,6 +1015,7 @@ public class RoutingRequest implements Cloneable, Serializable {
                 && preferToilets == other.preferToilets
                 && allowUnevenSurfaces == other.allowUnevenSurfaces
                 && crowding == other.crowding
+                && steepnessFactor == other.steepnessFactor
                 && restingPlaces == other.restingPlaces
                 && optimize.equals(other.optimize)
                 && maxWalkDistance == other.maxWalkDistance
@@ -1054,8 +1074,11 @@ public class RoutingRequest implements Cloneable, Serializable {
                 + (int) (worstTime & 0xffffffff) + modes.hashCode()
                 + (arriveBy ? 8966786 : 0) + (wheelchairAccessible ? 731980 : 0)
                 + (preferBenches ? 1300727 : 0) + (preferToilets ? 1301081 :0)
-                + new Double(crowding).hashCode() + (allowUnevenSurfaces ? 1301023 : 0)
-                + (restingPlaces ? 1301077 : 0)
+                ///////////////////////////////////////////////////////////////////////////////////////
+                + (allowUnevenSurfaces ? 1301023 : 0) + (restingPlaces ? 1301077 : 0)
+                + new Double(steepnessFactor).hashCode() * 1299853
+                + new Double(crowding).hashCode() * 1299869
+                //////////////////////////////////////////////////////////////////////////////////////
                 + optimize.hashCode() + new Double(maxWalkDistance).hashCode()
                 + new Double(transferPenalty).hashCode() + new Double(maxSlope).hashCode()
                 + new Double(walkReluctance).hashCode() + new Double(waitReluctance).hashCode()

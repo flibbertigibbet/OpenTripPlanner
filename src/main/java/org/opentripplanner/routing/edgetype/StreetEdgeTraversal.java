@@ -114,6 +114,8 @@ public class StreetEdgeTraversal {
             }
             weight = time;
             if (traverseMode.equals(TraverseMode.WALK)) {
+
+                // original slope weighting logic; use when steepness multiplier not set
                 // take slopes into account when walking
                 // FIXME: this causes steep stairs to be avoided. see #1297.
                 double costs = ElevationUtils.getWalkCostsForSlope(edge.getDistance(), edge.getMaxSlope());
@@ -121,6 +123,24 @@ public class StreetEdgeTraversal {
                 // for the walkspeed set by the user
                 double elevationUtilsSpeed = 4.0 / 3.0;
                 weight = costs * (elevationUtilsSpeed / speed);
+                /////////////////////////////////////////////////
+
+                //////////////////////////////////////////////////////////////////
+                if (options.steepnessFactor > 0) {
+                    double quick = edge.getSlopeSpeedEffectiveLength();
+                    double slope = edge.getSlopeWorkCostEffectiveLength();
+                    double timeFactor = 1 - options.steepnessFactor; // factors must sum to 1
+                    
+                    // TODO: calculate walking safety factor
+                    //double safety = edge.bicycleSafetyFactor * edge.getDistance();
+
+                    weight = quick * timeFactor + slope * options.steepnessFactor;
+                    weight /= speed;
+
+                    // TODO: to add safety calculation:
+                    // +  safety * options.triangleSafetyFactor;
+                }
+                //////////////////////////////////////////////////////
 
                 time = weight; //treat cost as time, as in the current model it actually is the same (this can be checked for maxSlope == 0)
                 /*
@@ -182,7 +202,7 @@ public class StreetEdgeTraversal {
                 }
             }
 
-            if (options.crowding >= 0) {
+            if (options.crowding != 0) {
                 double crowding = options.crowding;
                 LOG.info("Have crowding preference of {}", crowding);
                 // TODO: we don't have this data yet
