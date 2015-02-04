@@ -62,6 +62,7 @@ public class State implements Cloneable {
     public boolean hasUnevenSurfaces = false;
     public boolean passesRestingPlaces = false;
     public boolean aesthetic = false;
+    public float maxSlope = 0f;
     ///////////////////////
 
     // associate this state with a vertex in the graph
@@ -207,6 +208,7 @@ public class State implements Cloneable {
         if (this.hasUnevenSurfaces) str += " UNEVEN";
         if (this.passesRestingPlaces) str += " RESTING PLACES";
         if (this.aesthetic) str += " AESTHETIC";
+        if (this.maxSlope > 0) str += " MAX SLOPE: " + this.maxSlope;
         str += ">";
         return str;
     }
@@ -233,6 +235,7 @@ public class State implements Cloneable {
         if (passesRestingPlaces) str += " REST";
         if (hasUnevenSurfaces) str += " UNEVEN";
         if (aesthetic) str += " AESTHETIC";
+        if (maxSlope > 0) str += " MAX SLOPE: " + this.maxSlope;
         str += ">";
         return str;
     }
