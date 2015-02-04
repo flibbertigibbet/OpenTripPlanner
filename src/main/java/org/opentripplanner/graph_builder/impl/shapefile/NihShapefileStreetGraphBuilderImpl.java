@@ -164,6 +164,10 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
         int missingStartCt = 0;
         int missingEndCt = 0;
 
+        double maxSlopeFound = 0;
+        double minSlopeFound = 0;
+        double avgSlopeFound = 0;
+
         for (SimpleFeature feature : featureList) {
             if (feature.getDefaultGeometry() == null) {
                 LOG.warn("feature has no geometry: " + feature.getIdentifier());
@@ -376,7 +380,18 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
                     LOG.warn("Found bad matched way!  Got: {} Should be: {}", edge.getOsmId(), wayLabel);
                     isBad = true;
                 }
+                double useSlope = Math.abs(edge.getMaxSlope());
+                LOG.info("Max slope on edge: {}", edge.getMaxSlope());
+                avgSlopeFound += useSlope;
+                if (useSlope > maxSlopeFound) {
+                    maxSlopeFound = useSlope;
+                }
+                if (useSlope < minSlopeFound || minSlopeFound == 0) {
+                    minSlopeFound = useSlope;
+                }
             }
+
+            avgSlopeFound /= matchedEdges.size();
 
             if (isBad) {
                 continue;
@@ -398,6 +413,10 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
             LOG.warn("Missing {} start intersections.", missingStartCt);
             LOG.warn("Missing {} end intersections.", missingEndCt);
         }
+
+        LOG.info("Min slope found on an edge: {}", minSlopeFound);
+        LOG.info("Max slope found on an edge: {}", maxSlopeFound);
+        LOG.info("Average slope: {}", avgSlopeFound);
     }
 
     /**

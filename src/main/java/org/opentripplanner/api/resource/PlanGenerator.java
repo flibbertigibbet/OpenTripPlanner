@@ -391,12 +391,6 @@ public class PlanGenerator {
         leg.benches = lastState.getBenches();
         leg.toilets = lastState.getToilets();
 
-        // NIH properties
-        leg.unevenSurfaces = lastState.hasUnevenSurfaces;
-        leg.restingPlaces = lastState.passesRestingPlaces;
-        leg.aesthetic = lastState.aesthetic;
-        ///////////////////////////////////////////////
-
         addPlaces(leg, states, edges, showIntermediateStops);
 
         if (leg.isTransitLeg()) addRealTimeData(leg, states);
@@ -1097,28 +1091,32 @@ public class PlanGenerator {
         if (en instanceof AreaEdge) {
             step.area = true;
         } else if (en instanceof StreetEdge) {
-                StreetEdge street = (StreetEdge) en;
-                step.benches += street.getBenchCount();
-                step.toilets += street.getToiletCount();
+            StreetEdge street = (StreetEdge) en;
+            step.benches += street.getBenchCount();
+            step.toilets += street.getToiletCount();
+            float maxSlope = Math.abs(street.getMaxSlope());
+            if (maxSlope > step.maxSlope) {
+                step.maxSlope = maxSlope;
+            }
 
-                // NIH Properties
-                OptionSet nihOptions = street.getExtraOptionFields();
-                if (nihOptions != null) {
-                    step.lastAudited = new Date();
-                    OptionAttribute rest = nihOptions.getOption(NihOption.REST);
-                    if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
-                        step.rest = rest.getLabel();
-                    }
-                    OptionAttribute aesthetics = nihOptions.getOption(NihOption.AESTHETIC);
-                    if (aesthetics == Aesthetics.YES) {
-                        step.aesthetics = true;
-                    }
-                    OptionAttribute uneven = nihOptions.getOption(NihOption.XSLOPE);
-                    if (uneven == XSlope.SLOPED) {
-                        step.unevenSurfaces = true;
-                    }
+            // NIH Properties
+            OptionSet nihOptions = street.getExtraOptionFields();
+            if (nihOptions != null) {
+                step.lastAudited = new Date();
+                OptionAttribute rest = nihOptions.getOption(NihOption.REST);
+                if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
+                    step.rest = rest.getLabel();
+                }
+                OptionAttribute aesthetics = nihOptions.getOption(NihOption.AESTHETIC);
+                if (aesthetics == Aesthetics.YES) {
+                    step.aesthetics = true;
+                }
+                OptionAttribute uneven = nihOptions.getOption(NihOption.XSLOPE);
+                if (uneven == XSlope.SLOPED) {
+                    step.unevenSurfaces = true;
                 }
             }
+        }
         return step;
     }
 

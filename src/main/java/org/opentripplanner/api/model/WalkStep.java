@@ -121,6 +121,7 @@ public class WalkStep {
     public String rest = "";
     public boolean unevenSurfaces = false;
     public boolean aesthetics = false;
+    public float maxSlope = 0;
 
     // individual step geometry
     public EncodedPolylineBean stepGeometry;
@@ -170,6 +171,9 @@ public class WalkStep {
         }
         if (unevenSurfaces) {
             str += " uneven surface";
+        }
+        if (maxSlope != 0) {
+            str += "max slope: " + maxSlope;
         }
         ////////////////////////////////////
         return str += ")";
