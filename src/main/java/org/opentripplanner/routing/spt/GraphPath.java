@@ -124,7 +124,7 @@ public class GraphPath {
     }
 
     public boolean getUneven() {
-        return states.getLast().hasUnevenSurfaces;
+        return states.getLast().hasCrossSlope;
     }
 
     /**

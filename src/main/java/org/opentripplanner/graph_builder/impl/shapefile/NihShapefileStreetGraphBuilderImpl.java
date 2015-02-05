@@ -31,6 +31,7 @@ import org.opentripplanner.common.model.extras.NumericFieldSet;
 import org.opentripplanner.common.model.extras.OptionSet;
 import org.opentripplanner.common.model.extras.nihOptions.NihNumeric;
 import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihOptions.fields.Traffic;
 import org.opentripplanner.graph_builder.services.GraphBuilder;
 import org.opentripplanner.graph_builder.services.shapefile.FeatureSourceFactory;
 import org.opentripplanner.graph_builder.services.shapefile.SimpleFeatureConverter;
@@ -436,6 +437,7 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
             if (option.hasLeftRight()) {
 
                 if (option.equals(NihOption.TRAFFIC)) {
+                    converters.put(option, null);
                     continue; // TODO: will this field go into the shapefile eventually? skip it for now.
                 }
 
@@ -483,14 +485,14 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
 
             if (option.equals(NihOption.TRAFFIC)) {
                 // TODO: will this column be added to the shapefile?
-                continue;
-            }
-
-            if (!option.hasLeftRight() || isRightSide) {
-                val = optionConverters.get(option).get(0).convert(feature);
+                val = Traffic.NO_TRAFFIC.getLabel();
             } else {
-                // left side is second in list
-                val = optionConverters.get(option).get(1).convert(feature);
+                if (!option.hasLeftRight() || isRightSide) {
+                    val = optionConverters.get(option).get(0).convert(feature);
+                } else {
+                    // left side is second in list
+                    val = optionConverters.get(option).get(1).convert(feature);
+                }
             }
 
             if (val.isEmpty()) {

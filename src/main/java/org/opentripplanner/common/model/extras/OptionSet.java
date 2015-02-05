@@ -62,6 +62,10 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
      * @param attr Attribute instance for value to set on field
      */
     public void setValue(T option, OptionAttribute attr) {
+        if (!attr.getClass().equals(option.getOptionClass())) {
+            throw new IllegalArgumentException("Cannot set value " +  attr.getLabel() +
+                    " on option of type " + option.getFieldName());
+        }
         optionValues.put(option, attr.getValue());
     }
 
@@ -161,10 +165,11 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
         out.defaultWriteObject();
 
         // put extras into a HashMap for serialization
-        HashMap<T, Byte> serializableExtras = new HashMap<>(optionValues.size());
+        HashMap<T, String> serializableExtras = new HashMap<>(optionValues.size());
 
         for (T option : optionValues.keySet()) {
-            serializableExtras.put(option, optionValues.get(option));
+            LOG.info("Writing {} -> {}", option.getFieldName(), getOption(option).getLabel());
+            serializableExtras.put(option, getOption(option).getLabel());
         }
 
         if (serializableExtras.size() > 0) {
@@ -179,7 +184,7 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
         // perform the default de-serialization first
         in.defaultReadObject();
 
-        HashMap<T, Byte> serializableExtras = (HashMap<T, Byte>) in.readObject();
+        HashMap<T, String> serializableExtras = (HashMap<T, String>) in.readObject();
 
         if (serializableExtras == null) {
             return;
@@ -193,6 +198,11 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
         }
 
         optionValues = new EnumMap(enumClass);
-        optionValues.putAll(serializableExtras);
+
+        for (T option : serializableExtras.keySet()) {
+            setValue(option, serializableExtras.get(option));
+        }
+
+        LOG.info("Read in OptionSet from serialized graph: {}", this.toString());
     }
 }

@@ -88,12 +88,13 @@ public abstract class RoutingResource {
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /** NIH routing paramters */
-    @DefaultValue("true") @QueryParam("allowUnevenSurfaces") protected Boolean allowUnevenSurfaces;
+    @DefaultValue("true") @QueryParam("allowCrossSlope") protected Boolean allowUnevenSurfaces;
     @DefaultValue("false") @QueryParam("restingPlaces") protected Boolean restingPlaces;
     // crowding: -0 indicates don't care; -1 (quiet) to 1 (crowded)
     @DefaultValue("0") @QueryParam("crowding") protected Double crowding;
     // steepness factor: 0: (normal incline weighting) to 1 (avoid steep inclines)
     @DefaultValue("0") @QueryParam("steepnessFactor") protected Double steepnessFactor;
+    @DefaultValue("1") @QueryParam("surfaceComfort") protected Double surfaceComfort;
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     /** The maximum distance (in meters) the user is willing to walk. Defaults to unlimited. */

@@ -33,7 +33,6 @@ import org.opentripplanner.api.parameter.QualifiedModeSetSequence;
 import org.opentripplanner.common.MavenVersion;
 import org.opentripplanner.common.model.GenericLocation;
 import org.opentripplanner.common.model.NamedPlace;
-import org.opentripplanner.common.model.P2;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
@@ -318,10 +317,11 @@ public class RoutingRequest implements Cloneable, Serializable {
 
     ////////////////////////////////////////
     /* NIH preferences */
-    public boolean allowUnevenSurfaces = true;
+    public boolean allowCrossSlope = true;
     public boolean restingPlaces = false;
     public double crowding = 0;
     public double steepnessFactor = 0;
+    public double surfaceComfort = 1;
     ////////////////////////////////////////
 
     /** This is true when a GraphPath is being traversed in reverse for optimization purposes. */
@@ -531,9 +531,9 @@ public class RoutingRequest implements Cloneable, Serializable {
 
     ///////////////////////////////////////////////////
     /* NIH preferences */
-    public void setAllowUnevenSurfaces(boolean allowUnevenSurfaces) {
-        if (!allowUnevenSurfaces) LOG.info("Going to avoid uneven surfaces");
-        this.allowUnevenSurfaces = allowUnevenSurfaces;
+    public void setAllowCrossSlope(boolean allowCrossSlope) {
+        if (!allowCrossSlope) LOG.info("Going to avoid cross slope");
+        this.allowCrossSlope = allowCrossSlope;
     }
 
     public void setRestingPlaces(boolean restingPlaces) {
@@ -567,6 +567,20 @@ public class RoutingRequest implements Cloneable, Serializable {
         }
         if (steepnessFactor > 0) LOG.info("Setting steepness factor to {}", steepnessFactor);
         this.steepnessFactor = steepnessFactor;
+    }
+
+    public void setSurfaceComfort(double surfaceComfort) {
+        if (surfaceComfort > 1) {
+            LOG.warn("Invalid surface comfort value of {} passed in; correcting to 1 (range of 0 to 1)");
+            this.surfaceComfort = 1;
+            return;
+        } else if (surfaceComfort < 0) {
+            LOG.warn("Invalid surface comfort value of {} passed in; correcting to 0 (range of 0 to 1");
+            this.surfaceComfort = 0;
+            return;
+        }
+        if (surfaceComfort < 1) LOG.info("Setting surface comfort to {}", surfaceComfort);
+        this.surfaceComfort = surfaceComfort;
     }
     ///////////////////////////////////////////////////
 
@@ -804,9 +818,9 @@ public class RoutingRequest implements Cloneable, Serializable {
             sb.append(sep);
             sb.append("preferToilets");
         }
-        if (!allowUnevenSurfaces) {
+        if (!allowCrossSlope) {
             sb.append(sep);
-            sb.append("avoid uneven surfaces");
+            sb.append("avoid cross slope");
         }
         if (restingPlaces) {
             sb.append(sep);
@@ -1013,9 +1027,10 @@ public class RoutingRequest implements Cloneable, Serializable {
                 && wheelchairAccessible == other.wheelchairAccessible
                 && preferBenches == other.preferBenches
                 && preferToilets == other.preferToilets
-                && allowUnevenSurfaces == other.allowUnevenSurfaces
+                && allowCrossSlope == other.allowCrossSlope
                 && crowding == other.crowding
                 && steepnessFactor == other.steepnessFactor
+                && surfaceComfort == other.surfaceComfort
                 && restingPlaces == other.restingPlaces
                 && optimize.equals(other.optimize)
                 && maxWalkDistance == other.maxWalkDistance
@@ -1075,9 +1090,10 @@ public class RoutingRequest implements Cloneable, Serializable {
                 + (arriveBy ? 8966786 : 0) + (wheelchairAccessible ? 731980 : 0)
                 + (preferBenches ? 1300727 : 0) + (preferToilets ? 1301081 :0)
                 ///////////////////////////////////////////////////////////////////////////////////////
-                + (allowUnevenSurfaces ? 1301023 : 0) + (restingPlaces ? 1301077 : 0)
+                + (allowCrossSlope ? 1301023 : 0) + (restingPlaces ? 1301077 : 0)
                 + new Double(steepnessFactor).hashCode() * 1299853
                 + new Double(crowding).hashCode() * 1299869
+                + new Double(surfaceComfort).hashCode() * 1301011
                 //////////////////////////////////////////////////////////////////////////////////////
                 + optimize.hashCode() + new Double(maxWalkDistance).hashCode()
                 + new Double(transferPenalty).hashCode() + new Double(maxSlope).hashCode()
