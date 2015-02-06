@@ -1052,12 +1052,77 @@ public class PlanGenerator {
                 stepCoords.extend(geom.getCoordinates(), 0);
             } else {
                 stepCoords.extend(geom.getCoordinates(), 1);
+                // check for NIH properties from this edge to add to existing step
+                // TODO: if walk step contains both audited and unaudited edges, returns as audited.  Modify?
+                addNihToWalkStep(step, edge);
             }
 
             Geometry lineString = GeometryUtils.getGeometryFactory().createLineString(stepCoords);
             step.stepGeometry = PolylineEncoder.createEncodings(lineString);
         }
         return steps;
+    }
+
+    /**
+     * Add NIH fields from given edge to WalkStep result
+     *
+     * @param step WalkStep to modify
+     * @param edge Edge with NIH properties to set on WalkStep
+     * @return Modified WalkStep passed in
+     */
+    private static WalkStep addNihToWalkStep(WalkStep step, Edge edge) {
+        if (edge instanceof StreetEdge) {
+            StreetEdge street = (StreetEdge) edge;
+            step.benches += street.getBenchCount();
+            step.toilets += street.getToiletCount();
+            float maxSlope = Math.abs(street.getMaxSlope());
+            if (maxSlope > step.maxSlope) {
+                step.maxSlope = maxSlope;
+            }
+
+            // NIH Properties
+            OptionSet nihOptions = street.getExtraOptionFields();
+            if (nihOptions != null) {
+                step.lastAudited = new Date();
+                OptionAttribute rest = nihOptions.getOption(NihOption.REST);
+                if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
+                    step.rest = buildStepProperty(step.rest, rest);
+                }
+                OptionAttribute surface = nihOptions.getOption(NihOption.SURFACE);
+                if (surface != null) {
+                    step.surface = buildStepProperty(step.surface, surface);
+                }
+                OptionAttribute aesthetics = nihOptions.getOption(NihOption.AESTHETIC);
+                if (aesthetics == Aesthetics.YES) {
+                    step.aesthetics = true;
+                }
+                OptionAttribute xslope = nihOptions.getOption(NihOption.XSLOPE);
+                if (xslope == XSlope.SLOPED) {
+                    step.crossSlope = true;
+                }
+            }
+        }
+        return step;
+    }
+
+    /**
+     * Helper to append NIH properties to a WalkStep string, if the property is not already in the string.
+     *
+     * @param propertyString Extant property string on a WalkStep
+     * @param attribute Attribute to add, if its label is not already in the propertyString
+     * @return propertyString with attribute label appended (if new)
+     */
+    private static String buildStepProperty(String propertyString, OptionAttribute attribute) {
+        String newString = propertyString;
+        if (propertyString != null && !propertyString.isEmpty()) {
+            // append if there are multiple, different options
+            if (propertyString.indexOf(attribute.getLabel()) == -1) {
+                newString += ", " + attribute.getLabel();
+            }
+        } else {
+            newString = attribute.getLabel();
+        }
+        return newString;
     }
 
     private static boolean isLink(Edge edge) {
@@ -1088,38 +1153,11 @@ public class PlanGenerator {
         step.bogusName = en.hasBogusName();
         step.addAlerts(graph.streetNotesService.getNotes(s));
         step.angle = DirectionUtils.getFirstAngle(en.getGeometry());
+
         if (en instanceof AreaEdge) {
             step.area = true;
-        } else if (en instanceof StreetEdge) {
-            StreetEdge street = (StreetEdge) en;
-            step.benches += street.getBenchCount();
-            step.toilets += street.getToiletCount();
-            float maxSlope = Math.abs(street.getMaxSlope());
-            if (maxSlope > step.maxSlope) {
-                step.maxSlope = maxSlope;
-            }
-
-            // NIH Properties
-            OptionSet nihOptions = street.getExtraOptionFields();
-            if (nihOptions != null) {
-                step.lastAudited = new Date();
-                OptionAttribute rest = nihOptions.getOption(NihOption.REST);
-                if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
-                    step.rest = rest.getLabel();
-                }
-                OptionAttribute surface = nihOptions.getOption(NihOption.SURFACE);
-                if (surface != null) {
-                    step.surface = surface.getLabel();
-                }
-                OptionAttribute aesthetics = nihOptions.getOption(NihOption.AESTHETIC);
-                if (aesthetics == Aesthetics.YES) {
-                    step.aesthetics = true;
-                }
-                OptionAttribute xslope = nihOptions.getOption(NihOption.XSLOPE);
-                if (xslope == XSlope.SLOPED) {
-                    step.crossSlope = true;
-                }
-            }
+        } else {
+            addNihToWalkStep(step, en);
         }
         return step;
     }

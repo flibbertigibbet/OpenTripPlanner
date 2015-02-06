@@ -382,7 +382,6 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
                     isBad = true;
                 }
                 double useSlope = Math.abs(edge.getMaxSlope());
-                LOG.info("Max slope on edge: {}", edge.getMaxSlope());
                 avgSlopeFound += useSlope;
                 if (useSlope > maxSlopeFound) {
                     maxSlopeFound = useSlope;
@@ -456,7 +455,6 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
     private EnumMap<NihNumeric, SimpleFeatureConverter<Integer>> getNumericFieldConverters() {
         EnumMap<NihNumeric, SimpleFeatureConverter<Integer>> converters = new EnumMap(NihNumeric.class);
         for (NihNumeric field : NIH_NUMERIC_FIELDS) {
-            LOG.info("Adding converter for field {}", field.getFieldName());
             converters.put(field, new AttributeFeatureConverter(field.getFieldName()));
         }
         return converters;
@@ -470,12 +468,6 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
      * @param isRightSide Whether the graph edges set is for the right side of the street (left side if false)
      */
     private void setOptionProperties(SimpleFeature feature, Set<StreetEdge> edges, boolean isRightSide) {
-
-        if (isRightSide) {
-            LOG.info("Going to set option properties on right edges...");
-        } else {
-            LOG.info("Going to set option properties on left edges...");
-        }
 
         // build set of converted values
         OptionSet<NihOption> nihOptions = new OptionSet(NihOption.class);
@@ -514,12 +506,9 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
                     }
                 }
 
-                LOG.info("Going to set value {} for option {}", val, option.getFieldName());
                 nihOptions.setValue(option, val);
             }
         }
-
-        LOG.info("Built option set: {}", nihOptions.toString());
 
         for (StreetEdge edge : edges) {
             edge.setExtraOptionFields(nihOptions);
@@ -533,7 +522,6 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
      * @param edges Set of graph edges identified as belonging to the segment for this feature
      */
     private void setNumericProperties(SimpleFeature feature, Set<StreetEdge> edges) {
-        LOG.info("Going to set numeric properties on edges...");
 
         // build set of converted values
         NumericFieldSet<NihNumeric> nihNumericFieldSet = new NumericFieldSet(NihNumeric.class);
@@ -541,19 +529,14 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
         for (NihNumeric numericField : NIH_NUMERIC_FIELDS) {
             int val = 0;
 
-            LOG.info("Going to convert field {}", numericField.getFieldName());
-
             val = numericConverters.get(numericField).convert(feature);
 
             if (val == 0) {
                 LOG.warn("Skipping zero for option {}.  Was this intentional?", numericField.getFieldName());
             } else {
-                LOG.info("Going to set value {} for option {}", val, numericField.getFieldName());
                 nihNumericFieldSet.setValue(numericField, val);
             }
         }
-
-        LOG.info("Built numeric field set: {}", nihNumericFieldSet.toString());
 
         for (StreetEdge edge : edges) {
             edge.setExtraNumericFields(nihNumericFieldSet);
