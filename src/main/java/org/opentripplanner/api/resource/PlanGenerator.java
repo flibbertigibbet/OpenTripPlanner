@@ -1107,6 +1107,10 @@ public class PlanGenerator {
                 if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
                     step.rest = rest.getLabel();
                 }
+                OptionAttribute surface = nihOptions.getOption(NihOption.SURFACE);
+                if (surface != null) {
+                    step.surface = surface.getLabel();
+                }
                 OptionAttribute aesthetics = nihOptions.getOption(NihOption.AESTHETIC);
                 if (aesthetics == Aesthetics.YES) {
                     step.aesthetics = true;

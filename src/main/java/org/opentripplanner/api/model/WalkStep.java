@@ -119,6 +119,7 @@ public class WalkStep {
      * NIH features/hazards passed.
      */
     public String rest = "";
+    public String surface = "";
     public boolean crossSlope = false;
     public boolean aesthetics = false;
     public float maxSlope = 0;
@@ -168,6 +169,9 @@ public class WalkStep {
         }
         if (rest.length() > 0) {
             str += " resting place: " + rest;
+        }
+        if (surface.length() > 0) {
+            str += " " + surface;
         }
         if (crossSlope) {
             str += " xslope";

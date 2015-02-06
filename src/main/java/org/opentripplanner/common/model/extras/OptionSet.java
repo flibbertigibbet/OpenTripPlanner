@@ -168,7 +168,6 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
         HashMap<T, String> serializableExtras = new HashMap<>(optionValues.size());
 
         for (T option : optionValues.keySet()) {
-            LOG.info("Writing {} -> {}", option.getFieldName(), getOption(option).getLabel());
             serializableExtras.put(option, getOption(option).getLabel());
         }
 
@@ -202,7 +201,5 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
         for (T option : serializableExtras.keySet()) {
             setValue(option, serializableExtras.get(option));
         }
-
-        LOG.info("Read in OptionSet from serialized graph: {}", this.toString());
     }
 }
