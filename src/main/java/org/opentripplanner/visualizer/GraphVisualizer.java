@@ -62,7 +62,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
 import javax.swing.ListModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
@@ -74,12 +73,10 @@ import javax.swing.event.ListSelectionListener;
 import org.opentripplanner.common.model.GenericLocation;
 import org.opentripplanner.graph_builder.annotation.GraphBuilderAnnotation;
 import org.opentripplanner.graph_builder.annotation.StopUnlinked;
-import org.opentripplanner.routing.algorithm.GenericAStar;
 import org.opentripplanner.routing.core.OptimizeType;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.core.TraverseModeSet;
-import org.opentripplanner.routing.edgetype.StreetEdge;
 import org.opentripplanner.routing.edgetype.StreetEdge;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
@@ -355,7 +352,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
 
     private JCheckBox restCheckBox;
 
-    private JCheckBox allowUnevenCheckBox;
+    private JCheckBox allowXSlopeCheckBox;
 
     private JCheckBox busCheckBox;
 
@@ -409,7 +406,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
     // NIH number fields
     private JTextField crowding;
     private JTextField steepnessFactor;
-
+    private JTextField surfaceComfort;
     ///////////////////////////////
 
 	private JTextField walkSpeed;
@@ -421,8 +418,6 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
 	private JCheckBox softWalkLimiting;
 
 	private JTextField softWalkPenalty;
-
-	private JTextField softWalkOverageRate;
 
 	private JCheckBox arriveByCheckBox;
 
@@ -635,9 +630,9 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
 		//////////////////////////////
         restCheckBox = new JCheckBox("Prefer resting spots");
         pane.add(restCheckBox);
-        allowUnevenCheckBox = new JCheckBox("Allow uneven surfaces");
-		allowUnevenCheckBox.setSelected(true);
-        pane.add(allowUnevenCheckBox);
+        allowXSlopeCheckBox = new JCheckBox("Allow cross slope");
+		allowXSlopeCheckBox.setSelected(true);
+        pane.add(allowXSlopeCheckBox);
 		/////////////////////////////
 
         busCheckBox = new JCheckBox("busish");
@@ -683,6 +678,12 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         pane.add(steepnessLabel);
         steepnessFactor = new JTextField("0");
         pane.add(steepnessFactor);
+
+        // row: surface comfort
+        JLabel surfaceLabel = new JLabel("Surface comfort (0 (not) to 1 (ok with all)");
+        pane.add(surfaceLabel);
+        surfaceComfort = new JTextField("1");
+        pane.add(surfaceComfort);
         ////////////////////////////////////////////////////
 
         // row: walk speed
@@ -719,10 +720,12 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         pane.add(softWalkPenalty);
 
         // row: soft walk-limit overage
+        /*
         JLabel softWalkLimitOverageLabel = new JLabel("Soft walk-limiting overage:");
         pane.add(softWalkLimitOverageLabel);
         softWalkOverageRate = new JTextField("5.0");
         pane.add(softWalkOverageRate);
+        */
 
         // row: nPaths
         JLabel nPathsLabel = new JLabel("nPaths:");
@@ -1503,7 +1506,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         RoutingRequest options = new RoutingRequest(modeSet);
         options.setWheelchairAccessible(wheelchairCheckBox.isSelected());
 		options.setRestingPlaces(restCheckBox.isSelected());
-		options.setAllowUnevenSurfaces(allowUnevenCheckBox.isSelected());
+		options.setAllowCrossSlope(allowXSlopeCheckBox.isSelected());
         options.setArriveBy(arriveByCheckBox.isSelected());
         //options.setWalkBoardCost(Integer.parseInt(boardingPenaltyField.getText()) * 60); // override low 2-4 minute values
         // TODO LG Add ui element for bike board cost (for now bike = 2 * walk)
@@ -1513,6 +1516,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         //options.setMaxWalkDistance(Integer.parseInt(maxWalkField.getText()));
         options.setSteepnessFactor(Float.parseFloat(steepnessFactor.getText()));
         options.setCrowding(Float.parseFloat(crowding.getText()));
+        options.setSurfaceComfort(Float.parseFloat(surfaceComfort.getText()));
         //////////////////////////
         options.setMaxWalkDistance(999999999);
         options.setFromString(from);
@@ -1522,7 +1526,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         options.heuristicWeight = (Float.parseFloat(heuristicWeight.getText()));
         options.softWalkLimiting = ( softWalkLimiting.isSelected() );
         options.softWalkPenalty = (Float.parseFloat(softWalkPenalty.getText()));
-        options.softWalkOverageRate = (Float.parseFloat(this.softWalkOverageRate.getText()));
+        //options.softWalkOverageRate = (Float.parseFloat(this.softWalkOverageRate.getText()));
         options.numItineraries = 1;
         System.out.println("--------");
         System.out.println("Path from " + from + " to " + to + " at " + when);

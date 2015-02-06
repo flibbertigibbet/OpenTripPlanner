@@ -196,8 +196,8 @@ public class StateEditor {
         child.passesRestingPlaces = true;
     }
 
-    public void setHasUnevenSurfaces() {
-        child.hasUnevenSurfaces = true;
+    public void setHasCrossSlope() {
+        child.hasCrossSlope = true;
     }
 
     public void setIsAesthetic() {

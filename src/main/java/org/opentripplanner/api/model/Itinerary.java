@@ -71,7 +71,7 @@ public class Itinerary {
      * NIH properties
      */
     public boolean restingPlaces = false;
-    public boolean unevenSurfaces = false;
+    public boolean crossSlope = false;
     public boolean aesthetic = false;
 
     /**

@@ -546,7 +546,7 @@ public class PlanGenerator {
                 case WALK:
                     itinerary.benches = state.getBenches();
                     itinerary.toilets = state.getToilets();
-                    itinerary.unevenSurfaces = state.hasUnevenSurfaces;
+                    itinerary.crossSlope = state.hasCrossSlope;
                     itinerary.restingPlaces = state.passesRestingPlaces;
                     itinerary.aesthetic = state.aesthetic;
                     itinerary.walkTime += state.getTimeDeltaSeconds();
@@ -1107,13 +1107,17 @@ public class PlanGenerator {
                 if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
                     step.rest = rest.getLabel();
                 }
+                OptionAttribute surface = nihOptions.getOption(NihOption.SURFACE);
+                if (surface != null) {
+                    step.surface = surface.getLabel();
+                }
                 OptionAttribute aesthetics = nihOptions.getOption(NihOption.AESTHETIC);
                 if (aesthetics == Aesthetics.YES) {
                     step.aesthetics = true;
                 }
-                OptionAttribute uneven = nihOptions.getOption(NihOption.XSLOPE);
-                if (uneven == XSlope.SLOPED) {
-                    step.unevenSurfaces = true;
+                OptionAttribute xslope = nihOptions.getOption(NihOption.XSLOPE);
+                if (xslope == XSlope.SLOPED) {
+                    step.crossSlope = true;
                 }
             }
         }

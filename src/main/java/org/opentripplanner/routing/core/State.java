@@ -58,8 +58,8 @@ public class State implements Cloneable {
     // request parameters
     private boolean preferRestingPlaces;
 
-    // flags set on first uneven surface/resting place passed
-    public boolean hasUnevenSurfaces = false;
+    // NIH flags set on first danger/amenity of type passed
+    public boolean hasCrossSlope = false;
     public boolean passesRestingPlaces = false;
     public boolean aesthetic = false;
     public float maxSlope = 0f;
@@ -205,7 +205,7 @@ public class State implements Cloneable {
         String str = "<State " + new Date(getTimeInMillis()) + " [" + weight + "] "
                 + (isBikeRenting() ? "BIKE_RENT " : "") + (isCarParked() ? "CAR_PARKED " : "")
                 + vertex + (hasBenches() ? " BENCHES" : "") + (hasToilets() ? " TOILETS" : "");
-        if (this.hasUnevenSurfaces) str += " UNEVEN";
+        if (this.hasCrossSlope) str += " XSLOPE";
         if (this.passesRestingPlaces) str += " RESTING PLACES";
         if (this.aesthetic) str += " AESTHETIC";
         if (this.maxSlope > 0) str += " MAX SLOPE: " + this.maxSlope;
@@ -233,7 +233,7 @@ public class State implements Cloneable {
         if (hasBenches()) str += " benches=" + this.getBenches();
         if (hasToilets()) str += " toilets=" + this.getToilets();
         if (passesRestingPlaces) str += " REST";
-        if (hasUnevenSurfaces) str += " UNEVEN";
+        if (hasCrossSlope) str += " XSLOPE";
         if (aesthetic) str += " AESTHETIC";
         if (maxSlope > 0) str += " MAX SLOPE: " + this.maxSlope;
         str += ">";

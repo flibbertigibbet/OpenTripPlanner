@@ -104,9 +104,28 @@ public class StreetWithElevationEdge extends StreetEdge {
 
     @Override
     public String toString() {
-        return "StreetWithElevationEdge(" + getId() + ", " + getOsmId() + ", " + getName()
-                + ", " + fromv + " -> " + tov + " length=" + this.getDistance()
-                + " benches=" + this.getBenchCount() + " toilets=" + this.getToiletCount()
-                + " permission=" + this.getPermission() + ")";
+        StringBuilder sb = new StringBuilder();
+        sb.append("StreetWithElevationEdge(");
+        sb.append(getId());
+        sb.append(", ");
+        sb.append(getName());
+        sb.append(", ");
+        sb.append(getOsmId());
+        sb.append(", ");
+        sb.append(fromv);
+        sb.append(" -> ");
+        sb.append(tov);
+        sb.append(" length=");
+        sb.append(this.getDistance());
+        sb.append(" permission=");
+        sb.append(this.getPermission());
+        if (super.getExtraOptionFields() != null) {
+            sb.append(super.getExtraOptionFields().toString());
+        }
+        if (super.getExtraNumericFields() != null) {
+            sb.append(super.getExtraNumericFields().toString());
+        }
+        sb.append(")");
+        return sb.toString();
     }
 }

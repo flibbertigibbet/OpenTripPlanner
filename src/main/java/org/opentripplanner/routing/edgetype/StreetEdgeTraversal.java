@@ -28,6 +28,8 @@ public class StreetEdgeTraversal {
 
     private static final double GREENWAY_SAFETY_FACTOR = 0.1;
 
+    public static final byte CONCRETE_VAL = Surface.CONCRETE.getValue();
+
     private StreetEdge edge;
     private State state;
 
@@ -184,21 +186,24 @@ public class StreetEdgeTraversal {
             // check for NIH routing params
             OptionAttribute slope = extraOptions.getOption(NihOption.XSLOPE);
             if ((slope != null) && (slope == XSlope.SLOPED)) {
-                s1.setHasUnevenSurfaces(); // mark state
-                if (!options.allowUnevenSurfaces) {
-                    LOG.info("Avoiding edge {}: {} due to slope", edge.getName(), edge.getOsmId());
+                s1.setHasCrossSlope(); // mark state
+                if (!options.allowCrossSlope) {
+                    LOG.info("Not taking edge {}: {} due to cross slope", edge.getName(), edge.getOsmId());
                     return null;
+                } else {
+                    // negatively weight cross-sloped edge
+                    LOG.info("Avoiding edge {}: {} due to cross slope", edge.getName(), edge.getOsmId());
+                    weight *= 1.2;
                 }
             }
-
 
             OptionAttribute rest = extraOptions.getOption(NihOption.REST);
             if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
                 s1.setPassesRestingPlaces(); // mark state
                 if (options.restingPlaces) {
                     LOG.info("Preferring edge {}: {} with resting place {}", edge.getName(), edge.getOsmId(), rest.getLabel());
-                    weight *= 0.01;
-                    time *= 0.01;
+                    weight *= 0.1;
+                    time *= 0.1;
                 }
             }
 
@@ -206,6 +211,25 @@ public class StreetEdgeTraversal {
                 double crowding = options.crowding;
                 LOG.info("Have crowding preference of {}", crowding);
                 // TODO: we don't have this data yet
+            }
+
+            OptionAttribute curbRamp = extraOptions.getOption(NihOption.CURB_RAMP);
+            if (curbRamp == CurbRamp.YES) {
+                // prefer audited edges with curb ramps
+                weight *= 0.9;
+            }
+
+            OptionAttribute sidewalk = extraOptions.getOption(NihOption.SIDEWALK);
+            if (sidewalk == Sidewalk.YES) {
+                // prefer audited edges with a sidewalk
+                weight *= 0.8;
+            }
+
+            OptionAttribute aesthetic = extraOptions.getOption(NihOption.AESTHETIC);
+            if (aesthetic == Aesthetics.YES) {
+                // prefer pretty edges
+                weight *= 0.9;
+                s1.setIsAesthetic(); // mark state
             }
 
             // set weights generally based on NIH data
@@ -219,30 +243,27 @@ public class StreetEdgeTraversal {
                 // TODO: how to weight off of these values?
             }
 
-            OptionAttribute curbRamp = extraOptions.getOption(NihOption.CURB_RAMP);
             OptionAttribute surface = extraOptions.getOption(NihOption.SURFACE);
+
+            // ban non-concrete surfaces for wheelchairs
             if (options.wheelchairAccessible) {
                 if ( (curbRamp == CurbRamp.NO) || ((surface != null) && (surface != Surface.CONCRETE)) ) {
+                    LOG.info("Not taking edge {}: {} due to surface {}", edge.getName(), edge.getOsmId(), surface.getLabel());
                     return null;
                 }
             }
 
-            if (curbRamp == CurbRamp.YES) {
-                // prefer audited edges with curb ramps
-                weight *= 0.8;
-            }
-
-            OptionAttribute sidewalk = extraOptions.getOption(NihOption.SIDEWALK);
-            if (sidewalk == Sidewalk.YES) {
-                // prefer audited edges with a sidewalk
-                weight *= 0.2;
-            }
-
-            OptionAttribute aesthetic = extraOptions.getOption(NihOption.AESTHETIC);
-            if (aesthetic == Aesthetics.YES) {
-                // prefer pretty edges
-                weight *= 0.5;
-                s1.setIsAesthetic(); // mark state
+            // add to weight for non-concrete surfaces
+            if ((surface != null) && (options.surfaceComfort < 1) && (surface != Surface.CONCRETE)) {
+                // byte values increase by 1 for each surface more difficult to traverse than previous
+                // (concrete is the easiest)
+                // get a value between 0 and 1
+                double val = (Math.abs(surface.getValue() - CONCRETE_VAL) / 4.0);
+                // reverse input param range of 0 (not comfortable) to 1 (very comfortable)
+                double surfaceWeight = (1 - options.surfaceComfort) * val;
+                LOG.info("Avoiding edge {}: {} with surface {} using added weight {}", edge.getName(), edge.getOsmId(),
+                        surface.getLabel(), surfaceWeight);
+                weight += surfaceWeight;
             }
         }
         //////////////////////////////////
