@@ -1115,8 +1115,8 @@ public class PlanGenerator {
                 if (aesthetics == Aesthetics.YES) {
                     step.aesthetics = true;
                 }
-                OptionAttribute uneven = nihOptions.getOption(NihOption.XSLOPE);
-                if (uneven == XSlope.SLOPED) {
+                OptionAttribute xslope = nihOptions.getOption(NihOption.XSLOPE);
+                if (xslope == XSlope.SLOPED) {
                     step.crossSlope = true;
                 }
             }

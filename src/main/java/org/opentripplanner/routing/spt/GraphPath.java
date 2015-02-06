@@ -123,7 +123,7 @@ public class GraphPath {
         return states.getLast().passesRestingPlaces;
     }
 
-    public boolean getUneven() {
+    public boolean hasCrossSlope() {
         return states.getLast().hasCrossSlope;
     }
 
@@ -221,10 +221,10 @@ public class GraphPath {
             System.out.println("Aesthetically pleases edges passed in this graphpath.");
         if (getRest())
             System.out.println("Resting places passed in this graphpath.");
-        if (getUneven()) {
-            System.out.println("Uneven edges in this graphpath.");
+        if (hasCrossSlope()) {
+            System.out.println("Edges with cross slope in this graphpath.");
         } else {
-            System.out.println("No uneven edges in this graphpath.");
+            System.out.println("No cross-sloped edges in this graphpath.");
         }
     }
 

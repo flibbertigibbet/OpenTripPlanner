@@ -88,7 +88,7 @@ public abstract class RoutingResource {
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /** NIH routing paramters */
-    @DefaultValue("true") @QueryParam("allowCrossSlope") protected Boolean allowUnevenSurfaces;
+    @DefaultValue("true") @QueryParam("allowCrossSlope") protected Boolean allowCrossSlope;
     @DefaultValue("false") @QueryParam("restingPlaces") protected Boolean restingPlaces;
     // crowding: -0 indicates don't care; -1 (quiet) to 1 (crowded)
     @DefaultValue("0") @QueryParam("crowding") protected Double crowding;
