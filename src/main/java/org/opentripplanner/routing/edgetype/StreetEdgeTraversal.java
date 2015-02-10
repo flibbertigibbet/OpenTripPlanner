@@ -190,6 +190,9 @@ public class StreetEdgeTraversal {
                 if (!options.allowCrossSlope) {
                     LOG.info("Not taking edge {}: {} due to cross slope", edge.getName(), edge.getOsmId());
                     return null;
+                } else if (options.usingWalkerCane || options.wheelchairAccessible) {
+                    // strongly prefer to avoid cross slope for wheelchairs, walkers, or canes
+                    weight *= 2;
                 } else {
                     // negatively weight cross-sloped edge
                     LOG.info("Avoiding edge {}: {} due to cross slope", edge.getName(), edge.getOsmId());
@@ -242,6 +245,9 @@ public class StreetEdgeTraversal {
             if (curbRamp == CurbRamp.YES) {
                 // prefer audited edges with curb ramps
                 weight *= 0.9;
+            } else if (curbRamp == CurbRamp.NO && options.usingWalkerCane) {
+                // avoid streets without curb ramps if using walker or cane (but do not ban them)
+                weight *= 2;
             }
 
             OptionAttribute sidewalk = extraOptions.getOption(NihOption.SIDEWALK);
@@ -268,20 +274,22 @@ public class StreetEdgeTraversal {
                 // TODO: how to weight off of these values?
             }
 
+            if (options.wheelchairAccessible && curbRamp == CurbRamp.NO) {
+                 OptionAttribute width = extraOptions.getOption(NihOption.WIDTH);
+                 if (width == Width.LESS_THAN_FOUR_FEET || width == Width.FOUR_TO_FIVE_FEET) {
+                     LOG.info("Avoiding narrow sidewalk on {}: {}", edge.getName(), edge.getOsmId());
+                     // strongly prefer streets wider than 5 feet for wheelchairs
+                     weight *= 2;
+                 }
+            }
             OptionAttribute surface = extraOptions.getOption(NihOption.SURFACE);
 
-            // ban non-concrete surfaces for wheelchairs
-            if (options.wheelchairAccessible) {
-                if ( (curbRamp == CurbRamp.NO) || ((surface != null) && (surface != Surface.CONCRETE)) ) {
-                    LOG.info("Not taking edge {}: {} due to surface {}", edge.getName(), edge.getOsmId(), surface.getLabel());
-                    return null;
-                } else {
-                    OptionAttribute width = extraOptions.getOption(NihOption.WIDTH);
-                    if (width == Width.LESS_THAN_FOUR_FEET || width == Width.FOUR_TO_FIVE_FEET) {
-                        // strongly prefer streets wider than 5 feet for wheelchairs
-                        weight *= 2;
-                    }
-                }
+            // avoid non-concrete surfaces for wheelchairs or walker/cane
+            if (options.wheelchairAccessible || options.usingWalkerCane) {
+                 if (surface != null && surface != Surface.CONCRETE) {
+                     LOG.info("Avoiding edge {}: {} due to surface {}", edge.getName(), edge.getOsmId(), surface.getLabel());
+                     weight *= 2;
+                 }
             }
 
             // add to weight for non-concrete surfaces
