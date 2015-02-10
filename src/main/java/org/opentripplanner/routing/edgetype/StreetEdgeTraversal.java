@@ -210,8 +210,33 @@ public class StreetEdgeTraversal {
             if (options.crowding != 0) {
                 double crowding = options.crowding;
                 LOG.info("Have crowding preference of {}", crowding);
-                // TODO: we don't have this data yet
+                // use traffic as an estimate of street crowding
+                OptionAttribute traffic = extraOptions.getOption(NihOption.TRAFFIC);
+                if (traffic == Traffic.LIGHT || traffic == Traffic.NO_TRAFFIC) {
+                    if (options.crowding == 1) {
+                        // prefer crowded areas
+                        weight *= 1.5;
+                    } else {
+                        // prefer quiet
+                        weight *= 0.5;
+                    }
+                } else if (traffic == Traffic.HEAVY) {
+                    if (options.crowding == 1) {
+                        // prefer crowded areas
+                        weight *= 0.5;
+                    } else {
+                        // prefer quiet
+                        weight *= 1.5;
+                    }
+                }
             }
+
+            /*
+            if (options.walkSpeed <= SLIGHTLY_SLOW_WALKSPEED) {
+                // TODO: number of lanes is missing from shapefile.
+                // use it to increase weight for lots of lanes for slow walkers.
+            }
+            */
 
             OptionAttribute curbRamp = extraOptions.getOption(NihOption.CURB_RAMP);
             if (curbRamp == CurbRamp.YES) {
@@ -250,6 +275,12 @@ public class StreetEdgeTraversal {
                 if ( (curbRamp == CurbRamp.NO) || ((surface != null) && (surface != Surface.CONCRETE)) ) {
                     LOG.info("Not taking edge {}: {} due to surface {}", edge.getName(), edge.getOsmId(), surface.getLabel());
                     return null;
+                } else {
+                    OptionAttribute width = extraOptions.getOption(NihOption.WIDTH);
+                    if (width == Width.LESS_THAN_FOUR_FEET || width == Width.FOUR_TO_FIVE_FEET) {
+                        // strongly prefer streets wider than 5 feet for wheelchairs
+                        weight *= 2;
+                    }
                 }
             }
 
