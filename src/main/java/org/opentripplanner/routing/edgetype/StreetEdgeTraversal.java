@@ -245,8 +245,8 @@ public class StreetEdgeTraversal {
             if (curbRamp == CurbRamp.YES) {
                 // prefer audited edges with curb ramps
                 weight *= 0.9;
-            } else if (curbRamp == CurbRamp.NO && options.usingWalkerCane) {
-                // avoid streets without curb ramps if using walker or cane (but do not ban them)
+            } else if (curbRamp == CurbRamp.NO && (options.wheelchairAccessible || options.usingWalkerCane)) {
+                // avoid streets without curb ramps if using wheelchair, walker or cane
                 weight *= 2;
             }
 
@@ -274,7 +274,7 @@ public class StreetEdgeTraversal {
                 // TODO: how to weight off of these values?
             }
 
-            if (options.wheelchairAccessible && curbRamp == CurbRamp.NO) {
+            if (options.wheelchairAccessible) {
                  OptionAttribute width = extraOptions.getOption(NihOption.WIDTH);
                  if (width == Width.LESS_THAN_FOUR_FEET || width == Width.FOUR_TO_FIVE_FEET) {
                      LOG.info("Avoiding narrow sidewalk on {}: {}", edge.getName(), edge.getOsmId());
