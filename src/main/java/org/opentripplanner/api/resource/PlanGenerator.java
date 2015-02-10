@@ -39,6 +39,7 @@ import org.opentripplanner.common.model.extras.OptionAttribute;
 import org.opentripplanner.common.model.extras.OptionSet;
 import org.opentripplanner.common.model.extras.nihOptions.NihOption;
 import org.opentripplanner.common.model.extras.nihOptions.fields.Aesthetics;
+import org.opentripplanner.common.model.extras.nihOptions.fields.Hazards;
 import org.opentripplanner.common.model.extras.nihOptions.fields.Rest;
 import org.opentripplanner.common.model.extras.nihOptions.fields.XSlope;
 import org.opentripplanner.routing.alertpatch.Alert;
@@ -1091,6 +1092,10 @@ public class PlanGenerator {
                 OptionAttribute surface = nihOptions.getOption(NihOption.SURFACE);
                 if (surface != null) {
                     step.surface = buildStepProperty(step.surface, surface);
+                }
+                OptionAttribute hazards = nihOptions.getOption(NihOption.HAZARD_SEVERE);
+                if (hazards != null && hazards != Hazards.NO_HAZARDS) {
+                    step.hazards = buildStepProperty(step.hazards, hazards);
                 }
                 OptionAttribute aesthetics = nihOptions.getOption(NihOption.AESTHETIC);
                 if (aesthetics == Aesthetics.YES) {

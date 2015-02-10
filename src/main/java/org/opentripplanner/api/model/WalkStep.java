@@ -120,6 +120,7 @@ public class WalkStep {
      */
     public String rest = "";
     public String surface = "";
+    public String hazards = "";
     public boolean crossSlope = false;
     public boolean aesthetics = false;
     public float maxSlope = 0;
@@ -172,6 +173,9 @@ public class WalkStep {
         }
         if (surface.length() > 0) {
             str += " " + surface;
+        }
+        if (hazards.length() > 0) {
+            str += " hazards";
         }
         if (crossSlope) {
             str += " xslope";
