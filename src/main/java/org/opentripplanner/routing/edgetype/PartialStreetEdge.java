@@ -41,8 +41,16 @@ public class PartialStreetEdge extends StreetWithElevationEdge {
     public PartialStreetEdge(StreetEdge parentEdge, StreetVertex v1, StreetVertex v2,
                              LineString geometry, String name, double length, StreetTraversalPermission permission,
                              boolean back) {
-        super(v1, v2, geometry, name, length, permission, back);
+        super(v1, v2, geometry, name, length, permission, back, parentEdge.getOsmId());
+        if (parentEdge.getExtraOptionFields() != null) {
+            setExtraOptionFields(parentEdge.getExtraOptionFields());
+            setExtraNumericFields(parentEdge.getExtraNumericFields());
+        }
+
         setCarSpeed(parentEdge.getCarSpeed());
+        setBenchCount(parentEdge.getBenchCount());
+        setToiletCount(parentEdge.getToiletCount());
+
         this.parentEdge = parentEdge;
     }
 
