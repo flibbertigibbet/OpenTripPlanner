@@ -354,7 +354,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
 
     private JCheckBox allowXSlopeCheckBox;
 
-    private JCheckBox busCheckBox;
+    private JCheckBox walkerCaneCheckBox;
 
     private JCheckBox transitCheckBox;
 
@@ -633,10 +633,12 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         allowXSlopeCheckBox = new JCheckBox("Allow cross slope");
 		allowXSlopeCheckBox.setSelected(true);
         pane.add(allowXSlopeCheckBox);
+        walkerCaneCheckBox = new JCheckBox("Using walker or cane");
+        pane.add(walkerCaneCheckBox);
 		/////////////////////////////
 
-        busCheckBox = new JCheckBox("busish");
-        pane.add(busCheckBox);
+        //busCheckBox = new JCheckBox("busish");
+        //pane.add(busCheckBox);
         transitCheckBox = new JCheckBox("transit");
         // @flibbertigibbet: turning this off, since we're not loading transit data for this
         transitCheckBox.setSelected(false);
@@ -1497,7 +1499,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         TraverseModeSet modeSet = new TraverseModeSet();
         modeSet.setWalk(walkCheckBox.isSelected());
         modeSet.setBicycle(bikeCheckBox.isSelected());
-        modeSet.setBusish(busCheckBox.isSelected());
+        //modeSet.setBusish(busCheckBox.isSelected());
         modeSet.setCar(carCheckBox.isSelected());
         // must set generic transit mode last, and only when it is checked
         // otherwise 'false' will clear trainish and busish
@@ -1506,6 +1508,7 @@ public class GraphVisualizer extends JFrame implements VertexSelectionListener {
         RoutingRequest options = new RoutingRequest(modeSet);
         options.setWheelchairAccessible(wheelchairCheckBox.isSelected());
 		options.setRestingPlaces(restCheckBox.isSelected());
+        options.setUsingWalkerCane(walkerCaneCheckBox.isSelected());
 		options.setAllowCrossSlope(allowXSlopeCheckBox.isSelected());
         options.setArriveBy(arriveByCheckBox.isSelected());
         //options.setWalkBoardCost(Integer.parseInt(boardingPenaltyField.getText()) * 60); // override low 2-4 minute values

@@ -190,6 +190,9 @@ public class StreetEdgeTraversal {
                 if (!options.allowCrossSlope) {
                     LOG.info("Not taking edge {}: {} due to cross slope", edge.getName(), edge.getOsmId());
                     return null;
+                } else if (options.usingWalkerCane || options.wheelchairAccessible) {
+                    // strongly prefer to avoid cross slope for wheelchairs, walkers, or canes
+                    weight *= 2;
                 } else {
                     // negatively weight cross-sloped edge
                     LOG.info("Avoiding edge {}: {} due to cross slope", edge.getName(), edge.getOsmId());
@@ -210,13 +213,41 @@ public class StreetEdgeTraversal {
             if (options.crowding != 0) {
                 double crowding = options.crowding;
                 LOG.info("Have crowding preference of {}", crowding);
-                // TODO: we don't have this data yet
+                // use traffic as an estimate of street crowding
+                OptionAttribute traffic = extraOptions.getOption(NihOption.TRAFFIC);
+                if (traffic == Traffic.LIGHT || traffic == Traffic.NO_TRAFFIC) {
+                    if (options.crowding == 1) {
+                        // prefer crowded areas
+                        weight *= 1.5;
+                    } else {
+                        // prefer quiet
+                        weight *= 0.5;
+                    }
+                } else if (traffic == Traffic.HEAVY) {
+                    if (options.crowding == 1) {
+                        // prefer crowded areas
+                        weight *= 0.5;
+                    } else {
+                        // prefer quiet
+                        weight *= 1.5;
+                    }
+                }
             }
+
+            /*
+            if (options.walkSpeed <= SLIGHTLY_SLOW_WALKSPEED) {
+                // TODO: number of lanes is missing from shapefile.
+                // use it to increase weight for lots of lanes for slow walkers.
+            }
+            */
 
             OptionAttribute curbRamp = extraOptions.getOption(NihOption.CURB_RAMP);
             if (curbRamp == CurbRamp.YES) {
                 // prefer audited edges with curb ramps
                 weight *= 0.9;
+            } else if (curbRamp == CurbRamp.NO && (options.wheelchairAccessible || options.usingWalkerCane)) {
+                // avoid streets without curb ramps if using wheelchair, walker or cane
+                weight *= 2;
             }
 
             OptionAttribute sidewalk = extraOptions.getOption(NihOption.SIDEWALK);
@@ -243,14 +274,22 @@ public class StreetEdgeTraversal {
                 // TODO: how to weight off of these values?
             }
 
+            if (options.wheelchairAccessible) {
+                 OptionAttribute width = extraOptions.getOption(NihOption.WIDTH);
+                 if (width == Width.LESS_THAN_FOUR_FEET || width == Width.FOUR_TO_FIVE_FEET) {
+                     LOG.info("Avoiding narrow sidewalk on {}: {}", edge.getName(), edge.getOsmId());
+                     // strongly prefer streets wider than 5 feet for wheelchairs
+                     weight *= 2;
+                 }
+            }
             OptionAttribute surface = extraOptions.getOption(NihOption.SURFACE);
 
-            // ban non-concrete surfaces for wheelchairs
-            if (options.wheelchairAccessible) {
-                if ( (curbRamp == CurbRamp.NO) || ((surface != null) && (surface != Surface.CONCRETE)) ) {
-                    LOG.info("Not taking edge {}: {} due to surface {}", edge.getName(), edge.getOsmId(), surface.getLabel());
-                    return null;
-                }
+            // avoid non-concrete surfaces for wheelchairs or walker/cane
+            if (options.wheelchairAccessible || options.usingWalkerCane) {
+                 if (surface != null && surface != Surface.CONCRETE) {
+                     LOG.info("Avoiding edge {}: {} due to surface {}", edge.getName(), edge.getOsmId(), surface.getLabel());
+                     weight *= 2;
+                 }
             }
 
             // add to weight for non-concrete surfaces
@@ -264,6 +303,21 @@ public class StreetEdgeTraversal {
                 LOG.info("Avoiding edge {}: {} with surface {} using added weight {}", edge.getName(), edge.getOsmId(),
                         surface.getLabel(), surfaceWeight);
                 weight += surfaceWeight;
+            }
+
+            OptionAttribute hazard = extraOptions.getOption(NihOption.HAZARD_SEVERE);
+            if (hazard != null) {
+                if (hazard == Hazards.NO_HAZARDS) {
+                    weight *= 0.8;
+                } else if (hazard == Hazards.LOW) {
+                    weight *= 1.1;
+                } else if (hazard == Hazards.MODERATE) {
+                    weight *= 1.5;
+                } else if (hazard == Hazards.HIGH) {
+                    weight *= 1.7;
+                } else {
+                    LOG.warn("Hazard level {} not recognized", hazard.getLabel());
+                }
             }
         }
         //////////////////////////////////

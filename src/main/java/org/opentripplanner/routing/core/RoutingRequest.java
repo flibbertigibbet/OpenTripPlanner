@@ -319,6 +319,7 @@ public class RoutingRequest implements Cloneable, Serializable {
     /* NIH preferences */
     public boolean allowCrossSlope = true;
     public boolean restingPlaces = false;
+    public boolean usingWalkerCane = false;
     public double crowding = 0;
     public double steepnessFactor = 0;
     public double surfaceComfort = 1;
@@ -539,6 +540,11 @@ public class RoutingRequest implements Cloneable, Serializable {
     public void setRestingPlaces(boolean restingPlaces) {
         if (restingPlaces) LOG.info("Going to prefer passing resting places");
         this.restingPlaces = restingPlaces;
+    }
+
+    public void setUsingWalkerCane(boolean usingWalkerCane) {
+        if (usingWalkerCane) LOG.info("Using walker or cane");
+        this.usingWalkerCane = usingWalkerCane;
     }
 
     public void setCrowding(double crowding) {
@@ -827,6 +833,11 @@ public class RoutingRequest implements Cloneable, Serializable {
             sb.append("seeking resting places");
         }
 
+        if (usingWalkerCane) {
+            sb.append(sep);
+            sb.append("using walker or cane");
+        }
+
         if (crowding != 0) {
             sb.append(sep);
             sb.append("crowding");
@@ -1028,6 +1039,7 @@ public class RoutingRequest implements Cloneable, Serializable {
                 && preferBenches == other.preferBenches
                 && preferToilets == other.preferToilets
                 && allowCrossSlope == other.allowCrossSlope
+                && usingWalkerCane == other.usingWalkerCane
                 && crowding == other.crowding
                 && steepnessFactor == other.steepnessFactor
                 && surfaceComfort == other.surfaceComfort
@@ -1091,6 +1103,7 @@ public class RoutingRequest implements Cloneable, Serializable {
                 + (preferBenches ? 1300727 : 0) + (preferToilets ? 1301081 :0)
                 ///////////////////////////////////////////////////////////////////////////////////////
                 + (allowCrossSlope ? 1301023 : 0) + (restingPlaces ? 1301077 : 0)
+                + (usingWalkerCane ? 1300613: 0)
                 + new Double(steepnessFactor).hashCode() * 1299853
                 + new Double(crowding).hashCode() * 1299869
                 + new Double(surfaceComfort).hashCode() * 1301011
