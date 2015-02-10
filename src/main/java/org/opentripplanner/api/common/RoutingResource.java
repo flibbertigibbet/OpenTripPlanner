@@ -90,6 +90,7 @@ public abstract class RoutingResource {
     /** NIH routing paramters */
     @DefaultValue("true") @QueryParam("allowCrossSlope") protected Boolean allowCrossSlope;
     @DefaultValue("false") @QueryParam("restingPlaces") protected Boolean restingPlaces;
+    @DefaultValue("false") @QueryParam("usingWalkerCane") protected Boolean usingWalkerCane;
     // crowding: -0 indicates don't care; -1 (quiet) to 1 (crowded)
     @DefaultValue("0") @QueryParam("crowding") protected Double crowding;
     // steepness factor: 0: (normal incline weighting) to 1 (avoid steep inclines)
