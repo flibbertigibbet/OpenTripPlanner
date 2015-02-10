@@ -304,6 +304,21 @@ public class StreetEdgeTraversal {
                         surface.getLabel(), surfaceWeight);
                 weight += surfaceWeight;
             }
+
+            OptionAttribute hazard = extraOptions.getOption(NihOption.HAZARD_SEVERE);
+            if (hazard != null) {
+                if (hazard == Hazards.NO_HAZARDS) {
+                    weight *= 0.8;
+                } else if (hazard == Hazards.LOW) {
+                    weight *= 1.1;
+                } else if (hazard == Hazards.MODERATE) {
+                    weight *= 1.5;
+                } else if (hazard == Hazards.HIGH) {
+                    weight *= 1.7;
+                } else {
+                    LOG.warn("Hazard level {} not recognized", hazard.getLabel());
+                }
+            }
         }
         //////////////////////////////////
 
