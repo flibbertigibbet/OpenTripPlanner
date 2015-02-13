@@ -22,6 +22,10 @@ public class NumericFieldSet<T extends Enum<T> & ExtraFieldsFactory> implements 
 
     private static Logger LOG = LoggerFactory.getLogger(NumericFieldSet.class);
 
+    // convert date to/from integer representing days (instead of milliseconds, which requires a long)
+    // http://stackoverflow.com/questions/12067697/convert-current-date-as-integer
+    public static final long INTEGER_DATE_CONVERSION = 86400000L;
+
     // cannot reference generic type in static block, so initialize option classes once with this flag
     private static boolean optionsInitialized = false;
 

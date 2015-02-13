@@ -13,13 +13,7 @@
 
 package org.opentripplanner.api.resource;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 
 import org.onebusaway.gtfs.model.Agency;
 import org.onebusaway.gtfs.model.Route;
@@ -35,8 +29,10 @@ import org.opentripplanner.common.geometry.DirectionUtils;
 import org.opentripplanner.common.geometry.GeometryUtils;
 import org.opentripplanner.common.geometry.PackedCoordinateSequence;
 import org.opentripplanner.common.model.P2;
+import org.opentripplanner.common.model.extras.NumericFieldSet;
 import org.opentripplanner.common.model.extras.OptionAttribute;
 import org.opentripplanner.common.model.extras.OptionSet;
+import org.opentripplanner.common.model.extras.nihOptions.NihNumeric;
 import org.opentripplanner.common.model.extras.nihOptions.NihOption;
 import org.opentripplanner.common.model.extras.nihOptions.fields.Aesthetics;
 import org.opentripplanner.common.model.extras.nihOptions.fields.Hazards;
@@ -1082,9 +1078,18 @@ public class PlanGenerator {
             }
 
             // NIH Properties
+
+            // last audit date; convert to date from int field containing days
+            NumericFieldSet numericFieldSet = street.getExtraNumericFields();
+            if (numericFieldSet != null) {
+                EnumMap<NihNumeric, Integer> numericExtras = numericFieldSet.getNumericValues();
+                int lastAudit = numericExtras.get(NihNumeric.LAST_AUDIT);
+                step.lastAudited = new Date((long) lastAudit * NumericFieldSet.INTEGER_DATE_CONVERSION);
+            }
+
+            // option fields
             OptionSet nihOptions = street.getExtraOptionFields();
             if (nihOptions != null) {
-                step.lastAudited = new Date();
                 OptionAttribute rest = nihOptions.getOption(NihOption.REST);
                 if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
                     step.rest = buildStepProperty(step.rest, rest);

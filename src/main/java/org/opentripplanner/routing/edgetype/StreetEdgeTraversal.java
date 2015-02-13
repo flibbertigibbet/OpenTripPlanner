@@ -210,30 +210,6 @@ public class StreetEdgeTraversal {
                 }
             }
 
-            if (options.crowding != 0) {
-                double crowding = options.crowding;
-                LOG.info("Have crowding preference of {}", crowding);
-                // use traffic as an estimate of street crowding
-                OptionAttribute traffic = extraOptions.getOption(NihOption.TRAFFIC);
-                if (traffic == Traffic.LIGHT || traffic == Traffic.NO_TRAFFIC) {
-                    if (options.crowding == 1) {
-                        // prefer crowded areas
-                        weight *= 1.5;
-                    } else {
-                        // prefer quiet
-                        weight *= 0.5;
-                    }
-                } else if (traffic == Traffic.HEAVY) {
-                    if (options.crowding == 1) {
-                        // prefer crowded areas
-                        weight *= 0.5;
-                    } else {
-                        // prefer quiet
-                        weight *= 1.5;
-                    }
-                }
-            }
-
             /*
             if (options.walkSpeed <= SLIGHTLY_SLOW_WALKSPEED) {
                 // TODO: number of lanes is missing from shapefile.
@@ -271,7 +247,35 @@ public class StreetEdgeTraversal {
                 int niceness = numericExtras.get(NihNumeric.NICENESS);
                 int pleasantness = numericExtras.get(NihNumeric.PLEASANTNESS);
                 int safety = numericExtras.get(NihNumeric.SAFE_SCORE);
+                int crowding = numericExtras.get(NihNumeric.CROWD_SCORE);
                 // TODO: how to weight off of these values?
+
+                if (options.crowding != 0) {
+                    double crowdingPref = options.crowding;
+                    LOG.info("Have crowding preference of {}", crowdingPref);
+
+                    // TODO: weight crowding with numericExtras value
+
+                    /*
+                    if (traffic == Traffic.LIGHT || traffic == Traffic.NO_TRAFFIC) {
+                        if (options.crowding == 1) {
+                            // prefer crowded areas
+                            weight *= 1.5;
+                        } else {
+                            // prefer quiet
+                            weight *= 0.5;
+                        }
+                    } else if (traffic == Traffic.HEAVY) {
+                        if (options.crowding == 1) {
+                            // prefer crowded areas
+                            weight *= 0.5;
+                        } else {
+                            // prefer quiet
+                            weight *= 1.5;
+                        }
+                    }
+                    */
+                }
             }
 
             if (options.wheelchairAccessible) {

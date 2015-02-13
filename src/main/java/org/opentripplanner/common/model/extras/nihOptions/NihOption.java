@@ -13,20 +13,19 @@ import java.io.Serializable;
  */
 public enum NihOption implements OptionFieldsFactory, Serializable {
 
-    SIDEWALK("Sidewalk", false, Sidewalk.class),
-    BIKE_LANE("BikeLane", false, BikeLane.class),
-    PARKING_LANE("ParkingLan", false, ParkingLane.class),
-    SHOULDER("Shoulder", false, Shoulder.class),
-    WIDTH("Width", true, Width.class),
-    SURFACE("Surface", true, Surface.class),
-    CURB_RAMP("CurbRamp", true, CurbRamp.class),
-    XSLOPE("Xslope", true, XSlope.class),
-    REST("Rest", false, Rest.class),
-    TRAFFIC("Traffic", false, Traffic.class),
-    AESTHETIC("Aesthetics", false, Aesthetics.class),
-    PHYSICAL_DISORDER("PhysicalDi", false, PhysicalDisorder.class),
-    SOCIAL_DISORDER("SocialDiso", false, SocialDisorder.class),
-    HAZARD_SEVERE("HazardSeve", false, Hazards.class);
+    SIDEWALK("sidewalk", false, Sidewalk.class),
+    BIKE_LANE("bikelane", false, BikeLane.class),
+    PARKING_LANE("parkinglan", false, ParkingLane.class),
+    SHOULDER("shoulder", false, Shoulder.class),
+    WIDTH("width", true, Width.class),
+    SURFACE("surface", true, Surface.class),
+    CURB_RAMP("curbramp", true, CurbRamp.class),
+    XSLOPE("xslope", true, XSlope.class),
+    REST("rest", false, Rest.class),
+    AESTHETIC("aesthetics", false, Aesthetics.class),
+    PHYSICAL_DISORDER("physicaldi", false, PhysicalDisorder.class),
+    SOCIAL_DISORDER("socialdiso", false, SocialDisorder.class),
+    HAZARD_SEVERE("hazardseve", false, Hazards.class);
 
     // NOTE:
     // Fields that are directional, but encoded in a single column (bike lane, parking lane, etc.)
