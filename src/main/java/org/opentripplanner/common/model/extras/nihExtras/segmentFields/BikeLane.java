@@ -1,12 +1,12 @@
-package org.opentripplanner.common.model.extras.nihOptions.fields;
+package org.opentripplanner.common.model.extras.nihExtras.segmentFields;
 
 import org.opentripplanner.common.model.extras.OptionAttribute;
-import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihExtras.NihSegmentOptions;
 
 
-public class BikeLane extends OptionAttribute<NihOption> {
+public class BikeLane extends OptionAttribute<NihSegmentOptions> {
 
-    public static final NihOption optionName = NihOption.BIKE_LANE;
+    public static final NihSegmentOptions optionName = NihSegmentOptions.BIKE_LANE;
 
     public static final BikeLane YES = new BikeLane("Both");
     public static final BikeLane NO = new BikeLane("None");
@@ -17,7 +17,7 @@ public class BikeLane extends OptionAttribute<NihOption> {
     }
 
     @Override
-    public NihOption getName() {
+    public NihSegmentOptions getName() {
         return optionName;
     }
 

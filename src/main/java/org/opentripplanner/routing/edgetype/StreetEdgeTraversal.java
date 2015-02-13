@@ -3,9 +3,8 @@ package org.opentripplanner.routing.edgetype;
 import org.opentripplanner.common.model.extras.NumericFieldSet;
 import org.opentripplanner.common.model.extras.OptionAttribute;
 import org.opentripplanner.common.model.extras.OptionSet;
-import org.opentripplanner.common.model.extras.nihOptions.NihNumeric;
-import org.opentripplanner.common.model.extras.nihOptions.NihOption;
-import org.opentripplanner.common.model.extras.nihOptions.fields.*;
+import org.opentripplanner.common.model.extras.nihExtras.NihNumericSegments;
+import org.opentripplanner.common.model.extras.nihExtras.NihSegmentOptions;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.core.StateEditor;
@@ -28,7 +27,7 @@ public class StreetEdgeTraversal {
 
     private static final double GREENWAY_SAFETY_FACTOR = 0.1;
 
-    public static final byte CONCRETE_VAL = Surface.CONCRETE.getValue();
+    public static final byte CONCRETE_VAL = org.opentripplanner.common.model.extras.nihExtras.segmentFields.Surface.CONCRETE.getValue();
 
     private StreetEdge edge;
     private State state;
@@ -184,8 +183,8 @@ public class StreetEdgeTraversal {
             weight *= 0.8;
 
             // check for NIH routing params
-            OptionAttribute slope = extraOptions.getOption(NihOption.XSLOPE);
-            if ((slope != null) && (slope == XSlope.SLOPED)) {
+            OptionAttribute slope = extraOptions.getOption(NihSegmentOptions.XSLOPE);
+            if ((slope != null) && (slope == org.opentripplanner.common.model.extras.nihExtras.segmentFields.XSlope.SLOPED)) {
                 s1.setHasCrossSlope(); // mark state
                 if (!options.allowCrossSlope) {
                     LOG.info("Not taking edge {}: {} due to cross slope", edge.getName(), edge.getOsmId());
@@ -200,8 +199,8 @@ public class StreetEdgeTraversal {
                 }
             }
 
-            OptionAttribute rest = extraOptions.getOption(NihOption.REST);
-            if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
+            OptionAttribute rest = extraOptions.getOption(NihSegmentOptions.REST);
+            if ((rest != null) && (rest != org.opentripplanner.common.model.extras.nihExtras.segmentFields.Rest.NONE_AVAILABLE)) {
                 s1.setPassesRestingPlaces(); // mark state
                 if (options.restingPlaces) {
                     LOG.info("Preferring edge {}: {} with resting place {}", edge.getName(), edge.getOsmId(), rest.getLabel());
@@ -217,23 +216,23 @@ public class StreetEdgeTraversal {
             }
             */
 
-            OptionAttribute curbRamp = extraOptions.getOption(NihOption.CURB_RAMP);
-            if (curbRamp == CurbRamp.YES) {
+            OptionAttribute curbRamp = extraOptions.getOption(NihSegmentOptions.CURB_RAMP);
+            if (curbRamp == org.opentripplanner.common.model.extras.nihExtras.segmentFields.CurbRamp.YES) {
                 // prefer audited edges with curb ramps
                 weight *= 0.9;
-            } else if (curbRamp == CurbRamp.NO && (options.wheelchairAccessible || options.usingWalkerCane)) {
+            } else if (curbRamp == org.opentripplanner.common.model.extras.nihExtras.segmentFields.CurbRamp.NO && (options.wheelchairAccessible || options.usingWalkerCane)) {
                 // avoid streets without curb ramps if using wheelchair, walker or cane
                 weight *= 2;
             }
 
-            OptionAttribute sidewalk = extraOptions.getOption(NihOption.SIDEWALK);
-            if (sidewalk == Sidewalk.YES) {
+            OptionAttribute sidewalk = extraOptions.getOption(NihSegmentOptions.SIDEWALK);
+            if (sidewalk == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Sidewalk.YES) {
                 // prefer audited edges with a sidewalk
                 weight *= 0.8;
             }
 
-            OptionAttribute aesthetic = extraOptions.getOption(NihOption.AESTHETIC);
-            if (aesthetic == Aesthetics.YES) {
+            OptionAttribute aesthetic = extraOptions.getOption(NihSegmentOptions.AESTHETIC);
+            if (aesthetic == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Aesthetics.YES) {
                 // prefer pretty edges
                 weight *= 0.9;
                 s1.setIsAesthetic(); // mark state
@@ -243,11 +242,11 @@ public class StreetEdgeTraversal {
             // TODO: why do we have both "niceness" and "pleasantness"?
             // Does having these values mean we can ignore several of the other columns (traffic, disorder, etc?)
             if (numericFieldSet != null) {
-                EnumMap<NihNumeric, Integer> numericExtras = numericFieldSet.getNumericValues();
-                int niceness = numericExtras.get(NihNumeric.NICENESS);
-                int pleasantness = numericExtras.get(NihNumeric.PLEASANTNESS);
-                int safety = numericExtras.get(NihNumeric.SAFE_SCORE);
-                int crowding = numericExtras.get(NihNumeric.CROWD_SCORE);
+                EnumMap<NihNumericSegments, Integer> numericExtras = numericFieldSet.getNumericValues();
+                int niceness = numericExtras.get(NihNumericSegments.NICENESS);
+                int pleasantness = numericExtras.get(NihNumericSegments.PLEASANTNESS);
+                int safety = numericExtras.get(NihNumericSegments.SAFE_SCORE);
+                int crowding = numericExtras.get(NihNumericSegments.CROWD_SCORE);
                 // TODO: how to weight off of these values?
 
                 if (options.crowding != 0) {
@@ -279,25 +278,25 @@ public class StreetEdgeTraversal {
             }
 
             if (options.wheelchairAccessible) {
-                 OptionAttribute width = extraOptions.getOption(NihOption.WIDTH);
-                 if (width == Width.LESS_THAN_FOUR_FEET || width == Width.FOUR_TO_FIVE_FEET) {
+                 OptionAttribute width = extraOptions.getOption(NihSegmentOptions.WIDTH);
+                 if (width == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Width.LESS_THAN_FOUR_FEET || width == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Width.FOUR_TO_FIVE_FEET) {
                      LOG.info("Avoiding narrow sidewalk on {}: {}", edge.getName(), edge.getOsmId());
                      // strongly prefer streets wider than 5 feet for wheelchairs
                      weight *= 2;
                  }
             }
-            OptionAttribute surface = extraOptions.getOption(NihOption.SURFACE);
+            OptionAttribute surface = extraOptions.getOption(NihSegmentOptions.SURFACE);
 
             // avoid non-concrete surfaces for wheelchairs or walker/cane
             if (options.wheelchairAccessible || options.usingWalkerCane) {
-                 if (surface != null && surface != Surface.CONCRETE) {
+                 if (surface != null && surface != org.opentripplanner.common.model.extras.nihExtras.segmentFields.Surface.CONCRETE) {
                      LOG.info("Avoiding edge {}: {} due to surface {}", edge.getName(), edge.getOsmId(), surface.getLabel());
                      weight *= 2;
                  }
             }
 
             // add to weight for non-concrete surfaces
-            if ((surface != null) && (options.surfaceComfort < 1) && (surface != Surface.CONCRETE)) {
+            if ((surface != null) && (options.surfaceComfort < 1) && (surface != org.opentripplanner.common.model.extras.nihExtras.segmentFields.Surface.CONCRETE)) {
                 // byte values increase by 1 for each surface more difficult to traverse than previous
                 // (concrete is the easiest)
                 // get a value between 0 and 1
@@ -309,15 +308,15 @@ public class StreetEdgeTraversal {
                 weight += surfaceWeight;
             }
 
-            OptionAttribute hazard = extraOptions.getOption(NihOption.HAZARD_SEVERE);
+            OptionAttribute hazard = extraOptions.getOption(NihSegmentOptions.HAZARD_SEVERE);
             if (hazard != null) {
-                if (hazard == Hazards.NO_HAZARDS) {
+                if (hazard == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Hazards.NO_HAZARDS) {
                     weight *= 0.8;
-                } else if (hazard == Hazards.LOW) {
+                } else if (hazard == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Hazards.LOW) {
                     weight *= 1.1;
-                } else if (hazard == Hazards.MODERATE) {
+                } else if (hazard == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Hazards.MODERATE) {
                     weight *= 1.5;
-                } else if (hazard == Hazards.HIGH) {
+                } else if (hazard == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Hazards.HIGH) {
                     weight *= 1.7;
                 } else {
                     LOG.warn("Hazard level {} not recognized", hazard.getLabel());

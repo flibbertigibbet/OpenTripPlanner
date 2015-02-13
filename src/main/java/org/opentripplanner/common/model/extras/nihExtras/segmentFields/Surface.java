@@ -1,12 +1,12 @@
-package org.opentripplanner.common.model.extras.nihOptions.fields;
+package org.opentripplanner.common.model.extras.nihExtras.segmentFields;
 
 import org.opentripplanner.common.model.extras.OptionAttribute;
-import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihExtras.NihSegmentOptions;
 
 
-public class Surface extends OptionAttribute<NihOption> {
+public class Surface extends OptionAttribute<NihSegmentOptions> {
 
-    public static final NihOption optionName = NihOption.SURFACE;
+    public static final NihSegmentOptions optionName = NihSegmentOptions.SURFACE;
 
     // TODO: make new type for multiple choice options?
 
@@ -23,7 +23,7 @@ public class Surface extends OptionAttribute<NihOption> {
     }
 
     @Override
-    public NihOption getName() {
+    public NihSegmentOptions getName() {
         return optionName;
     }
 

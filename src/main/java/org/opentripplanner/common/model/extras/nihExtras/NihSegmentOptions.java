@@ -1,9 +1,9 @@
-package org.opentripplanner.common.model.extras.nihOptions;
+package org.opentripplanner.common.model.extras.nihExtras;
 
 import org.opentripplanner.common.MavenVersion;
 import org.opentripplanner.common.model.extras.OptionAttribute;
 import org.opentripplanner.common.model.extras.OptionFieldsFactory;
-import org.opentripplanner.common.model.extras.nihOptions.fields.*;
+import org.opentripplanner.common.model.extras.nihExtras.segmentFields.*;
 
 import java.io.Serializable;
 
@@ -11,7 +11,8 @@ import java.io.Serializable;
 /**
  * Created by kathrynkillebrew on 1/22/15.
  */
-public enum NihOption implements OptionFieldsFactory, Serializable {
+public enum NihSegmentOptions implements OptionFieldsFactory, Serializable {
+
 
     SIDEWALK("sidewalk", false, Sidewalk.class),
     BIKE_LANE("bikelane", false, BikeLane.class),
@@ -42,7 +43,7 @@ public enum NihOption implements OptionFieldsFactory, Serializable {
 
     private final Class<? extends OptionAttribute> optionClass;
 
-    private NihOption(String fieldName, boolean hasLeftRight, Class<? extends OptionAttribute> clazz) {
+    private NihSegmentOptions(String fieldName, boolean hasLeftRight, Class<? extends OptionAttribute> clazz) {
         this.fieldName = fieldName;
         this.hasLeftRight = hasLeftRight;
         this.optionClass = clazz;

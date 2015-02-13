@@ -1,4 +1,4 @@
-package org.opentripplanner.common.model.extras.nihOptions;
+package org.opentripplanner.common.model.extras.nihExtras;
 
 import org.opentripplanner.common.MavenVersion;
 import org.opentripplanner.common.model.extras.ExtraFieldsFactory;
@@ -9,20 +9,17 @@ import java.io.Serializable;
 /**
  * Created by kathrynkillebrew on 1/22/15.
  */
-public enum NihNumeric implements ExtraFieldsFactory, Serializable {
+public enum NihNumericIntersections implements ExtraFieldsFactory, Serializable {
 
-    SAFE_SCORE("safescore"),
-    CROWD_SCORE("crowdscore"),
-    PLEASANTNESS("pleasantne"),
-    NICENESS("niceness"),
-    LAST_AUDIT("updated_at");
+    SIGNAL_TIME("SignalTime"),
+    LANE_COUNT("LaneCount");
 
     private static final long serialVersionUID = MavenVersion.VERSION.getUID();
 
     // Column name in input
     private final String fieldName;
 
-    private NihNumeric(String fieldName) {
+    private NihNumericIntersections(String fieldName) {
         this.fieldName = fieldName;
     }
 

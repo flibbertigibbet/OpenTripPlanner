@@ -1,12 +1,12 @@
-package org.opentripplanner.common.model.extras.nihOptions.fields;
+package org.opentripplanner.common.model.extras.nihExtras.segmentFields;
 
 import org.opentripplanner.common.model.extras.OptionAttribute;
-import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihExtras.NihSegmentOptions;
 
 
-public class Aesthetics extends OptionAttribute<NihOption> {
+public class Aesthetics extends OptionAttribute<NihSegmentOptions> {
 
-    public static final NihOption optionName = NihOption.AESTHETIC;
+    public static final NihSegmentOptions optionName = NihSegmentOptions.AESTHETIC;
 
     public static final Aesthetics YES = new Aesthetics("Y");
     public static final Aesthetics NO = new Aesthetics("N");
@@ -17,7 +17,7 @@ public class Aesthetics extends OptionAttribute<NihOption> {
     }
 
     @Override
-    public NihOption getName() {
+    public NihSegmentOptions getName() {
         return optionName;
     }
 

@@ -1,12 +1,12 @@
-package org.opentripplanner.common.model.extras.nihOptions.fields;
+package org.opentripplanner.common.model.extras.nihExtras.segmentFields;
 
 import org.opentripplanner.common.model.extras.OptionAttribute;
-import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihExtras.NihSegmentOptions;
 
 
-public class Width extends OptionAttribute<NihOption> {
+public class Width extends OptionAttribute<NihSegmentOptions> {
 
-    public static final NihOption optionName = NihOption.WIDTH;
+    public static final NihSegmentOptions optionName = NihSegmentOptions.WIDTH;
 
     public static final Width LESS_THAN_FOUR_FEET = new Width("< 4 feet");
     public static final Width FOUR_TO_FIVE_FEET = new Width("> 4-4'11 feet");
@@ -19,7 +19,7 @@ public class Width extends OptionAttribute<NihOption> {
     }
 
     @Override
-    public NihOption getName() {
+    public NihSegmentOptions getName() {
         return optionName;
     }
 
