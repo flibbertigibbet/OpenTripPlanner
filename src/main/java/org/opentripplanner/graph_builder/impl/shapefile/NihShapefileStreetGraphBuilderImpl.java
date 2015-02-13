@@ -488,8 +488,6 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
                 converter = optionConverters.get(option).get(1);
             }
 
-            LOG.info("Found converter {} for field {}", converter.getAttributeName(), option.getFieldName());
-
             val = converter.convert(feature);
 
             if (val.isEmpty()) {
