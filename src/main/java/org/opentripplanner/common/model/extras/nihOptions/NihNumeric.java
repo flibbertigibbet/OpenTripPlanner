@@ -11,9 +11,10 @@ import java.io.Serializable;
  */
 public enum NihNumeric implements ExtraFieldsFactory, Serializable {
 
-    SAFE_SCORE("SafeScore"),
-    PLEASANTNESS("Pleasantne"),
-    NICENESS("Niceness");
+    SAFE_SCORE("safescore"),
+    CROWD_SCORE("crowdscore"),
+    PLEASANTNESS("pleasantne"),
+    NICENESS("niceness");
 
     private static final long serialVersionUID = MavenVersion.VERSION.getUID();
 
