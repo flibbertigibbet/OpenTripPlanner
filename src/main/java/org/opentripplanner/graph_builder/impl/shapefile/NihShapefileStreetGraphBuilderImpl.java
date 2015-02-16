@@ -29,9 +29,8 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opentripplanner.common.geometry.GeometryUtils;
 import org.opentripplanner.common.model.extras.NumericFieldSet;
 import org.opentripplanner.common.model.extras.OptionSet;
-import org.opentripplanner.common.model.extras.nihOptions.NihNumeric;
-import org.opentripplanner.common.model.extras.nihOptions.NihOption;
-import org.opentripplanner.common.model.extras.nihOptions.fields.Traffic;
+import org.opentripplanner.common.model.extras.nihExtras.NihNumericSegments;
+import org.opentripplanner.common.model.extras.nihExtras.NihSegmentOptions;
 import org.opentripplanner.graph_builder.services.GraphBuilder;
 import org.opentripplanner.graph_builder.services.shapefile.FeatureSourceFactory;
 import org.opentripplanner.graph_builder.services.shapefile.SimpleFeatureConverter;
@@ -68,16 +67,19 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
     private static Logger LOG = LoggerFactory.getLogger(ShapefileStreetGraphBuilderImpl.class);
 
     // collection of option fields expected in NIH segments shapefile
-    private static final Set<NihOption> NIH_OPTIONS = EnumSet.allOf(NihOption.class);
+    private static final Set<NihSegmentOptions> NIH_OPTIONS = EnumSet.allOf(NihSegmentOptions.class);
 
     // collection of numeric fields
-    private static final Set<NihNumeric> NIH_NUMERIC_FIELDS = EnumSet.allOf(NihNumeric.class);
+    private static final Set<NihNumericSegments> NIH_NUMERIC_FIELDS = EnumSet.allOf(NihNumericSegments.class);
 
     // converters for the option fields expected in NIH segments shapefile (have two if they are for L/R sides)
-    private EnumMap<NihOption, ArrayList<StringAttributeFeatureConverter>> optionConverters;
+    private EnumMap<NihSegmentOptions, ArrayList<StringAttributeFeatureConverter>> optionConverters;
 
     // converters for the numeric fields expeted in NIH segments shapefile
-    private EnumMap<NihNumeric, SimpleFeatureConverter<Integer>> numericConverters;
+    private EnumMap<NihNumericSegments, SimpleFeatureConverter<Long>> numericConverters;
+
+    // special converter for last audit date
+    SimpleFeatureConverter<Date> dateConverter;
 
     private FeatureSourceFactory _featureSourceFactory;
 
@@ -128,8 +130,8 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
 
         // get identifier fields
         StreetVertexIndexServiceImpl vertexSvc = new StreetVertexIndexServiceImpl(graph);
-        SimpleFeatureConverter<Long> osmIdSelector = new AttributeFeatureConverter("osm_id");
-        SimpleFeatureConverter<Integer> segmentIdSelector = new AttributeFeatureConverter("segment_id");
+        SimpleFeatureConverter<Double> osmIdSelector = new AttributeFeatureConverter("osm_id");
+        SimpleFeatureConverter<Long> segmentIdSelector = new AttributeFeatureConverter("segment_id");
         StringAttributeFeatureConverter nameSelector = new StringAttributeFeatureConverter("name", "");
 
         // set up the field converters
@@ -178,9 +180,12 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
             String streetName = nameSelector.convert(feature);
 
             String wayId = "";
-            Long way = osmIdSelector.convert(feature);
+            Double way = osmIdSelector.convert(feature);
+
+            // TODO: why is this now a Double in the source?
+            // formatting Double as String directly results in scientific notation, so cast to long
             if (way != null) {
-                wayId = way.toString();
+                wayId = String.valueOf(way.longValue());
             }
 
             String segmentId = segmentIdSelector.convert(feature).toString();
@@ -424,21 +429,16 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
      *
      * @return Map of field enumeration value to list of one or two feature converters (if separate columns for L and R)
      */
-    private EnumMap<NihOption, ArrayList<StringAttributeFeatureConverter>> getOptionFieldConverters() {
+    private EnumMap<NihSegmentOptions, ArrayList<StringAttributeFeatureConverter>> getOptionFieldConverters() {
         // if have R/L columns, have list [R, L]
-        EnumMap<NihOption, ArrayList<StringAttributeFeatureConverter>> converters = new EnumMap(NihOption.class);
+        EnumMap<NihSegmentOptions, ArrayList<StringAttributeFeatureConverter>> converters = new EnumMap(NihSegmentOptions.class);
 
-        final String LEFT_PREFIX = "L_";
-        final String RIGHT_PREFIX = "R_";
+        final String LEFT_PREFIX = "l_";
+        final String RIGHT_PREFIX = "r_";
 
-        for (NihOption option : NIH_OPTIONS) {
+        for (NihSegmentOptions option : NIH_OPTIONS) {
             ArrayList<StringAttributeFeatureConverter> fields = new ArrayList();
             if (option.hasLeftRight()) {
-
-                if (option.equals(NihOption.TRAFFIC)) {
-                    converters.put(option, null);
-                    continue; // TODO: will this field go into the shapefile eventually? skip it for now.
-                }
 
                 // make two converters, one for each side
                 fields.add(new StringAttributeFeatureConverter(RIGHT_PREFIX + option.getFieldName(), ""));
@@ -452,9 +452,14 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
         return converters;
     }
 
-    private EnumMap<NihNumeric, SimpleFeatureConverter<Integer>> getNumericFieldConverters() {
-        EnumMap<NihNumeric, SimpleFeatureConverter<Integer>> converters = new EnumMap(NihNumeric.class);
-        for (NihNumeric field : NIH_NUMERIC_FIELDS) {
+    private EnumMap<NihNumericSegments, SimpleFeatureConverter<Long>> getNumericFieldConverters() {
+        EnumMap<NihNumericSegments, SimpleFeatureConverter<Long>> converters = new EnumMap(NihNumericSegments.class);
+        for (NihNumericSegments field : NIH_NUMERIC_FIELDS) {
+            if (field == NihNumericSegments.LAST_AUDIT) {
+                // convert separately from Date
+                dateConverter = new AttributeFeatureConverter(field.getFieldName());
+                continue;
+            }
             converters.put(field, new AttributeFeatureConverter(field.getFieldName()));
         }
         return converters;
@@ -470,22 +475,20 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
     private void setOptionProperties(SimpleFeature feature, Set<StreetEdge> edges, boolean isRightSide) {
 
         // build set of converted values
-        OptionSet<NihOption> nihOptions = new OptionSet(NihOption.class);
+        OptionSet<NihSegmentOptions> nihOptions = new OptionSet(NihSegmentOptions.class);
 
-        for (NihOption option : NIH_OPTIONS) {
+        for (NihSegmentOptions option : NIH_OPTIONS) {
             String val = "";
+            StringAttributeFeatureConverter converter = null;
 
-            if (option.equals(NihOption.TRAFFIC)) {
-                // TODO: will this column be added to the shapefile?
-                val = Traffic.NO_TRAFFIC.getLabel();
+            if (!option.hasLeftRight() || isRightSide) {
+                converter = optionConverters.get(option).get(0);
             } else {
-                if (!option.hasLeftRight() || isRightSide) {
-                    val = optionConverters.get(option).get(0).convert(feature);
-                } else {
-                    // left side is second in list
-                    val = optionConverters.get(option).get(1).convert(feature);
-                }
+                // left side is second in list
+                converter = optionConverters.get(option).get(1);
             }
+
+            val = converter.convert(feature);
 
             if (val.isEmpty()) {
                 LOG.warn("Skipping setting an empty value for option {}.  Was this intentional?", option.getFieldName());
@@ -524,12 +527,19 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
     private void setNumericProperties(SimpleFeature feature, Set<StreetEdge> edges) {
 
         // build set of converted values
-        NumericFieldSet<NihNumeric> nihNumericFieldSet = new NumericFieldSet(NihNumeric.class);
+        NumericFieldSet<NihNumericSegments> nihNumericFieldSet = new NumericFieldSet(NihNumericSegments.class);
 
-        for (NihNumeric numericField : NIH_NUMERIC_FIELDS) {
+        for (NihNumericSegments numericField : NIH_NUMERIC_FIELDS) {
             int val = 0;
 
-            val = numericConverters.get(numericField).convert(feature);
+            if (numericField != NihNumericSegments.LAST_AUDIT) {
+                // TODO: these all range from 0 to 100; why are they Longs in the source?
+                val = numericConverters.get(numericField).convert(feature).intValue();
+            } else {
+                // convert last audit date to int with days
+                Date lastAudit = dateConverter.convert(feature);
+                val = (int) (lastAudit.getTime() / NumericFieldSet.INTEGER_DATE_CONVERSION);
+            }
 
             if (val == 0) {
                 LOG.warn("Skipping zero for option {}.  Was this intentional?", numericField.getFieldName());

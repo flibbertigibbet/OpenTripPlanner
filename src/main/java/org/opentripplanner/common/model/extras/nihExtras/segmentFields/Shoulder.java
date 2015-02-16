@@ -1,12 +1,12 @@
-package org.opentripplanner.common.model.extras.nihOptions.fields;
+package org.opentripplanner.common.model.extras.nihExtras.segmentFields;
 
 import org.opentripplanner.common.model.extras.OptionAttribute;
-import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihExtras.NihSegmentOptions;
 
 
-public class Shoulder extends OptionAttribute<NihOption> {
+public class Shoulder extends OptionAttribute<NihSegmentOptions> {
 
-    public static final NihOption optionName = NihOption.SHOULDER;
+    public static final NihSegmentOptions optionName = NihSegmentOptions.SHOULDER;
 
     public static final Shoulder YES = new Shoulder("Both");
     public static final Shoulder NO = new Shoulder("None");
@@ -17,7 +17,7 @@ public class Shoulder extends OptionAttribute<NihOption> {
     }
 
     @Override
-    public NihOption getName() {
+    public NihSegmentOptions getName() {
         return optionName;
     }
 

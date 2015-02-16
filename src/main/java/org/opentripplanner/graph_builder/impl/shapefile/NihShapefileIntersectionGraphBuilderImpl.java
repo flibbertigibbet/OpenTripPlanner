@@ -22,31 +22,23 @@ import org.geotools.data.Query;
 import org.geotools.factory.Hints;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
-import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.ReferencingFactoryFinder;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.crs.CRSAuthorityFactory;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opentripplanner.common.geometry.GeometryUtils;
-import org.opentripplanner.common.model.P2;
-import org.opentripplanner.graph_builder.impl.shapefile.AttributeFeatureConverter;
-import org.opentripplanner.graph_builder.impl.shapefile.StringAttributeFeatureConverter;
+import org.opentripplanner.common.model.extras.NumericFieldSet;
+import org.opentripplanner.common.model.extras.OptionSet;
+import org.opentripplanner.common.model.extras.nihExtras.NihIntersectionOptions;
+import org.opentripplanner.common.model.extras.nihExtras.NihNumericIntersections;
 import org.opentripplanner.graph_builder.services.GraphBuilder;
 import org.opentripplanner.graph_builder.services.shapefile.FeatureSourceFactory;
 import org.opentripplanner.graph_builder.services.shapefile.SimpleFeatureConverter;
-import org.opentripplanner.routing.alertpatch.Alert;
-import org.opentripplanner.routing.edgetype.StreetEdge;
-import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
-import org.opentripplanner.routing.graph.Vertex;
 import org.opentripplanner.routing.impl.*;
 import org.opentripplanner.routing.vertextype.StreetVertex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 
 /**
@@ -56,6 +48,18 @@ import com.google.common.collect.Multimap;
  */
 public class NihShapefileIntersectionGraphBuilderImpl implements GraphBuilder {
     private static Logger LOG = LoggerFactory.getLogger(ShapefileStreetGraphBuilderImpl.class);
+
+    // collection of option fields expected in NIH intersections shapefile
+    private static final Set<NihIntersectionOptions> NIH_OPTIONS = EnumSet.allOf(NihIntersectionOptions.class);
+
+    // converters for the option fields expected in NIH intersections shapefile
+    private EnumMap<NihIntersectionOptions, StringAttributeFeatureConverter> optionConverters;
+
+    // converter for the signal time
+    SimpleFeatureConverter<Double> signalTimeConverter;
+
+    // converter for the lane count
+    SimpleFeatureConverter<Integer> laneCountConverter;
 
     private FeatureSourceFactory _featureSourceFactory;
 
@@ -102,9 +106,16 @@ public class NihShapefileIntersectionGraphBuilderImpl implements GraphBuilder {
             _featureSourceFactory.cleanup();
         }
 
-        // TODO: get rest of properties
+        // get NIH ID
         StreetVertexIndexServiceImpl vertexSvc = new StreetVertexIndexServiceImpl(graph);
         StringAttributeFeatureConverter intersectionIdSelector = new StringAttributeFeatureConverter("intsctn_id", "");
+
+        // converters for numeric fields
+        signalTimeConverter = new AttributeFeatureConverter(NihNumericIntersections.SIGNAL_TIME.getFieldName());
+        laneCountConverter = new AttributeFeatureConverter(NihNumericIntersections.LANE_COUNT.getFieldName());
+
+        // set up the field converters
+        optionConverters = getOptionFieldConverters();
 
         List<SimpleFeature> featureList = new ArrayList();
         FeatureIterator<SimpleFeature> it2 = features.features();
@@ -141,13 +152,67 @@ public class NihShapefileIntersectionGraphBuilderImpl implements GraphBuilder {
                 foundIntersectionCt += 1;
             }
 
-            // TODO: Set intersection properties
+            // set intersection option properties
+            setOptionProperties(feature, intersection);
+
+            // set intersection numeric properties
+            NumericFieldSet<NihNumericIntersections> nihNumericFieldSet = new NumericFieldSet(NihNumericIntersections.class);
+
+            // lane count
+            int laneCt = laneCountConverter.convert(feature);
+            nihNumericFieldSet.setValue(NihNumericIntersections.LANE_COUNT, laneCt);
+
+            // signal time, converted to int for storage
+            Double signalTime = signalTimeConverter.convert(feature) * NumericFieldSet.SIGNAL_TIME_CONVERSION;
+            nihNumericFieldSet.setValue(NihNumericIntersections.SIGNAL_TIME, signalTime.intValue());
+
         }
 
         LOG.info("Found {} intersections.", foundIntersectionCt);
         if (missingIntersectionCt > 0) {
             LOG.warn("Missing {} intersections.", missingIntersectionCt);
         }
+    }
+
+    /**
+     * Build out the attribute converters to get field values out of the feature.
+     *
+     * @return Map of field enumeration value to feature converter
+     */
+    private EnumMap<NihIntersectionOptions, StringAttributeFeatureConverter> getOptionFieldConverters() {
+        EnumMap<NihIntersectionOptions, StringAttributeFeatureConverter> converters = new EnumMap(NihIntersectionOptions.class);
+
+        for (NihIntersectionOptions option : NIH_OPTIONS) {
+            converters.put(option, new StringAttributeFeatureConverter(option.getFieldName(), ""));
+        }
+
+        return converters;
+    }
+
+    /**
+     * Set the attributes for this feature on the matching graph edges found.
+     *
+     * @param feature Shapefile SimpleFeature with the properties to set
+     * @param vertex Street vertex identified as matching this feature
+     */
+    private void setOptionProperties(SimpleFeature feature, StreetVertex vertex) {
+
+        // build set of converted values
+        OptionSet<NihIntersectionOptions> nihOptions = new OptionSet(NihIntersectionOptions.class);
+
+        for (NihIntersectionOptions option : NIH_OPTIONS) {
+            StringAttributeFeatureConverter converter = optionConverters.get(option);
+            String val = converter.convert(feature);
+
+            if (val.isEmpty()) {
+                LOG.warn("Skipping setting an empty value for option {}.  Was this intentional?", option.getFieldName());
+            } else {
+                nihOptions.setValue(option, val);
+            }
+        }
+
+        // add NIH properties to StreetVertex
+        vertex.setExtraOptionFields(nihOptions);
     }
 
     private Point toPoint(Geometry g) {

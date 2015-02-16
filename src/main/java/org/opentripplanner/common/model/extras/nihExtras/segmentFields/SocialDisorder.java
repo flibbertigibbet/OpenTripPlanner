@@ -1,12 +1,12 @@
-package org.opentripplanner.common.model.extras.nihOptions.fields;
+package org.opentripplanner.common.model.extras.nihExtras.segmentFields;
 
 import org.opentripplanner.common.model.extras.OptionAttribute;
-import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihExtras.NihSegmentOptions;
 
 
-public class SocialDisorder extends OptionAttribute<NihOption> {
+public class SocialDisorder extends OptionAttribute<NihSegmentOptions> {
 
-    public static final NihOption optionName = NihOption.SOCIAL_DISORDER;
+    public static final NihSegmentOptions optionName = NihSegmentOptions.SOCIAL_DISORDER;
 
     public static final SocialDisorder NO_SOCIAL_DISORDER = new SocialDisorder("None");
     public static final SocialDisorder LITTLE = new SocialDisorder("A little");
@@ -18,7 +18,7 @@ public class SocialDisorder extends OptionAttribute<NihOption> {
     }
 
     @Override
-    public NihOption getName() {
+    public NihSegmentOptions getName() {
         return optionName;
     }
 

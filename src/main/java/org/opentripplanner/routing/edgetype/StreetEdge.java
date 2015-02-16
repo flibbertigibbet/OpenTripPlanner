@@ -88,7 +88,7 @@ public class StreetEdge extends Edge implements Cloneable {
     }
 
     public void setExtraOptionFields(OptionSet extraOptionFields) {
-        LOG.info("Adding extra option fiels to edge: {}", extraOptionFields.toString());
+        LOG.info("Adding extra option fields to edge: {}", extraOptionFields.toString());
         this.extraOptionFields = extraOptionFields;
     }
 

@@ -13,10 +13,14 @@
 
 package org.opentripplanner.routing.vertextype;
 
+import org.opentripplanner.common.model.extras.NumericFieldSet;
+import org.opentripplanner.common.model.extras.OptionSet;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
 
 import com.vividsolutions.jts.geom.Coordinate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract base class for vertices in the street layer of the graph.
@@ -26,6 +30,32 @@ import com.vividsolutions.jts.geom.Coordinate;
 public abstract class StreetVertex extends Vertex {
 
     private static final long serialVersionUID = 1L;
+
+    private static Logger LOG = LoggerFactory.getLogger(StreetVertex.class);
+
+    ///////////////////////////////////////////////////////////////////////////////////
+    // optional extra features for weighting
+    private OptionSet extraOptionFields;
+
+    private NumericFieldSet extraNumericFields;
+
+    public OptionSet getExtraOptionFields() {
+        return extraOptionFields;
+    }
+
+    public void setExtraOptionFields(OptionSet extraOptionFields) {
+        LOG.info("Adding extra option fields to vertex: {}", extraOptionFields.toString());
+        this.extraOptionFields = extraOptionFields;
+    }
+
+    public NumericFieldSet getExtraNumericFields() {
+        return extraNumericFields;
+    }
+
+    public void setExtraNumericFields(NumericFieldSet extraNumericFields) {
+        this.extraNumericFields = extraNumericFields;
+    }
+    /////////////////////////////////////////////////////////////////////////////////
 
     public StreetVertex(Graph g, String label, Coordinate coord, String streetName) {
         this(g, label, coord.x, coord.y, streetName);

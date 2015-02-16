@@ -1,12 +1,12 @@
-package org.opentripplanner.common.model.extras.nihOptions.fields;
+package org.opentripplanner.common.model.extras.nihExtras.segmentFields;
 
 import org.opentripplanner.common.model.extras.OptionAttribute;
-import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihExtras.NihSegmentOptions;
 
 
-public class Rest extends OptionAttribute<NihOption> {
+public class Rest extends OptionAttribute<NihSegmentOptions> {
 
-    public static final NihOption optionName = NihOption.REST;
+    public static final NihSegmentOptions optionName = NihSegmentOptions.REST;
 
     public static final Rest NONE_AVAILABLE = new Rest("");
     public static final Rest OTHER_AVAILABLE = new Rest("Other");
@@ -20,7 +20,7 @@ public class Rest extends OptionAttribute<NihOption> {
     }
 
     @Override
-    public NihOption getName() {
+    public NihSegmentOptions getName() {
         return optionName;
     }
 

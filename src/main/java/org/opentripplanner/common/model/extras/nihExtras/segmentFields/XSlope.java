@@ -1,12 +1,12 @@
-package org.opentripplanner.common.model.extras.nihOptions.fields;
+package org.opentripplanner.common.model.extras.nihExtras.segmentFields;
 
 import org.opentripplanner.common.model.extras.OptionAttribute;
-import org.opentripplanner.common.model.extras.nihOptions.NihOption;
+import org.opentripplanner.common.model.extras.nihExtras.NihSegmentOptions;
 
 
-public class XSlope extends OptionAttribute<NihOption> {
+public class XSlope extends OptionAttribute<NihSegmentOptions> {
 
-    public static final NihOption optionName = NihOption.XSLOPE;
+    public static final NihSegmentOptions optionName = NihSegmentOptions.XSLOPE;
 
     public static final XSlope LEVEL = new XSlope("Level");
     public static final XSlope SLOPED = new XSlope("Sloped");
@@ -17,7 +17,7 @@ public class XSlope extends OptionAttribute<NihOption> {
     }
 
     @Override
-    public NihOption getName() {
+    public NihSegmentOptions getName() {
         return optionName;
     }
 

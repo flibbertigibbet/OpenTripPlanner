@@ -13,13 +13,7 @@
 
 package org.opentripplanner.api.resource;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 
 import org.onebusaway.gtfs.model.Agency;
 import org.onebusaway.gtfs.model.Route;
@@ -35,13 +29,15 @@ import org.opentripplanner.common.geometry.DirectionUtils;
 import org.opentripplanner.common.geometry.GeometryUtils;
 import org.opentripplanner.common.geometry.PackedCoordinateSequence;
 import org.opentripplanner.common.model.P2;
+import org.opentripplanner.common.model.extras.NumericFieldSet;
 import org.opentripplanner.common.model.extras.OptionAttribute;
 import org.opentripplanner.common.model.extras.OptionSet;
-import org.opentripplanner.common.model.extras.nihOptions.NihOption;
-import org.opentripplanner.common.model.extras.nihOptions.fields.Aesthetics;
-import org.opentripplanner.common.model.extras.nihOptions.fields.Hazards;
-import org.opentripplanner.common.model.extras.nihOptions.fields.Rest;
-import org.opentripplanner.common.model.extras.nihOptions.fields.XSlope;
+import org.opentripplanner.common.model.extras.nihExtras.NihNumericSegments;
+import org.opentripplanner.common.model.extras.nihExtras.NihSegmentOptions;
+import org.opentripplanner.common.model.extras.nihExtras.segmentFields.Aesthetics;
+import org.opentripplanner.common.model.extras.nihExtras.segmentFields.Hazards;
+import org.opentripplanner.common.model.extras.nihExtras.segmentFields.Rest;
+import org.opentripplanner.common.model.extras.nihExtras.segmentFields.XSlope;
 import org.opentripplanner.routing.alertpatch.Alert;
 import org.opentripplanner.routing.alertpatch.AlertPatch;
 import org.opentripplanner.routing.core.RoutingContext;
@@ -1082,26 +1078,35 @@ public class PlanGenerator {
             }
 
             // NIH Properties
+
+            // last audit date; convert to date from int field containing days
+            NumericFieldSet numericFieldSet = street.getExtraNumericFields();
+            if (numericFieldSet != null) {
+                EnumMap<NihNumericSegments, Integer> numericExtras = numericFieldSet.getNumericValues();
+                int lastAudit = numericExtras.get(NihNumericSegments.LAST_AUDIT);
+                step.lastAudited = new Date((long) lastAudit * NumericFieldSet.INTEGER_DATE_CONVERSION);
+            }
+
+            // option fields
             OptionSet nihOptions = street.getExtraOptionFields();
             if (nihOptions != null) {
-                step.lastAudited = new Date();
-                OptionAttribute rest = nihOptions.getOption(NihOption.REST);
+                OptionAttribute rest = nihOptions.getOption(NihSegmentOptions.REST);
                 if ((rest != null) && (rest != Rest.NONE_AVAILABLE)) {
                     step.rest = buildStepProperty(step.rest, rest);
                 }
-                OptionAttribute surface = nihOptions.getOption(NihOption.SURFACE);
+                OptionAttribute surface = nihOptions.getOption(NihSegmentOptions.SURFACE);
                 if (surface != null) {
                     step.surface = buildStepProperty(step.surface, surface);
                 }
-                OptionAttribute hazards = nihOptions.getOption(NihOption.HAZARD_SEVERE);
+                OptionAttribute hazards = nihOptions.getOption(NihSegmentOptions.HAZARD_SEVERE);
                 if (hazards != null && hazards != Hazards.NO_HAZARDS) {
                     step.hazards = buildStepProperty(step.hazards, hazards);
                 }
-                OptionAttribute aesthetics = nihOptions.getOption(NihOption.AESTHETIC);
+                OptionAttribute aesthetics = nihOptions.getOption(NihSegmentOptions.AESTHETIC);
                 if (aesthetics == Aesthetics.YES) {
                     step.aesthetics = true;
                 }
-                OptionAttribute xslope = nihOptions.getOption(NihOption.XSLOPE);
+                OptionAttribute xslope = nihOptions.getOption(NihSegmentOptions.XSLOPE);
                 if (xslope == XSlope.SLOPED) {
                     step.crossSlope = true;
                 }
