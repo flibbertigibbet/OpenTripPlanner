@@ -270,17 +270,9 @@ public class StreetEdgeTraversal {
                 pleasantness /= NIH_RANGE_WEIGHTING * 4;
                 safety /= NIH_RANGE_WEIGHTING * 4;
 
-                if (niceness != 0) {
-                    weight *= niceness;
-                }
-
-                if (pleasantness != 0) {
-                    weight *= pleasantness;
-                }
-
-                if (safety != 0) {
-                    weight *= safety;
-                }
+                weight += niceness;
+                weight += pleasantness;
+                weight += safety;
                 //////////////////////////////////////////////////////////////////
 
                 if (options.crowding != 0) {
