@@ -29,9 +29,6 @@ public class NumericFieldSet<T extends Enum<T> & ExtraFieldsFactory> implements 
     // multiply signal time by this value to store it as an int
     public static final float SIGNAL_TIME_CONVERSION = 1000.0f;
 
-    // cannot reference generic type in static block, so initialize option classes once with this flag
-    private static boolean optionsInitialized = false;
-
     private transient EnumMap<T, Integer> numericValues;
 
     // keep track of the enumeration type

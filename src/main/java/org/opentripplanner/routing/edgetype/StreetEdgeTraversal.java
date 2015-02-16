@@ -187,9 +187,8 @@ public class StreetEdgeTraversal {
         // NIH weighting preferences
         OptionSet extraOptions = edge.getExtraOptionFields();
         NumericFieldSet numericFieldSet = edge.getExtraNumericFields();
-        boolean isAudited = (extraOptions != null) || (numericFieldSet != null);
 
-        if (isAudited) {
+        if (extraOptions != null || numericFieldSet != null) {
             LOG.info("Found audited edge {}: {}", edge.getName(), edge.getOsmId());
 
             // prefer audited edges
@@ -253,9 +252,8 @@ public class StreetEdgeTraversal {
 
             // set weights generally based on NIH data
             // TODO: why do we have both "niceness" and "pleasantness"?
-            // Does having these values mean we can ignore several of the other columns (traffic, disorder, etc?)
-            if (numericFieldSet != null) {
-                EnumMap<NihNumericSegments, Integer> numericExtras = numericFieldSet.getNumericValues();
+            EnumMap<NihNumericSegments, Integer> numericExtras = numericFieldSet.getNumericValues();
+            if (numericExtras != null) {
                 int niceness = numericExtras.get(NihNumericSegments.NICENESS);
                 int pleasantness = numericExtras.get(NihNumericSegments.PLEASANTNESS);
                 int safety = numericExtras.get(NihNumericSegments.SAFE_SCORE);
@@ -272,9 +270,17 @@ public class StreetEdgeTraversal {
                 pleasantness /= NIH_RANGE_WEIGHTING * 4;
                 safety /= NIH_RANGE_WEIGHTING * 4;
 
-                weight *= niceness;
-                weight *= pleasantness;
-                weight *= safety;
+                if (niceness != 0) {
+                    weight *= niceness;
+                }
+
+                if (pleasantness != 0) {
+                    weight *= pleasantness;
+                }
+
+                if (safety != 0) {
+                    weight *= safety;
+                }
                 //////////////////////////////////////////////////////////////////
 
                 if (options.crowding != 0) {
@@ -420,54 +426,56 @@ public class StreetEdgeTraversal {
             // NIH turn cost preferences
 
             // use intersections data here to set turning costs
-            OptionSet<NihIntersectionOptions> intersectionOptions = traversedVertex.getExtraOptionFields();
-            if (traversedVertex != null && intersectionOptions != null) {
-                // how long is spent waiting to cross, and then walking across the intersection
-                double enterSeconds;
-                double traverseSeconds;
+            if (traversedVertex != null) {
+                OptionSet<NihIntersectionOptions> intersectionOptions = traversedVertex.getExtraOptionFields();
+                if (intersectionOptions != null) {
+                    // how long is spent waiting to cross, and then walking across the intersection
+                    double enterSeconds;
+                    double traverseSeconds;
 
-                OptionAttribute intersectionType = intersectionOptions.getOption(NihIntersectionOptions.INTERSECTION_TYPE);
-                OptionAttribute signalType = intersectionOptions.getOption(NihIntersectionOptions.SIGNALIZATION);
-                OptionAttribute crossRisk = intersectionOptions.getOption(NihIntersectionOptions.CROSSING_RISK);
+                    OptionAttribute intersectionType = intersectionOptions.getOption(NihIntersectionOptions.INTERSECTION_TYPE);
+                    OptionAttribute signalType = intersectionOptions.getOption(NihIntersectionOptions.SIGNALIZATION);
+                    OptionAttribute crossRisk = intersectionOptions.getOption(NihIntersectionOptions.CROSSING_RISK);
 
-                NumericFieldSet<NihNumericIntersections> intersectionsNumericFieldSet = traversedVertex.getExtraNumericFields();
-                if (intersectionsNumericFieldSet != null) {
-                    EnumMap<NihNumericIntersections, Integer> intersectionNumericFields =
-                            intersectionsNumericFieldSet.getNumericValues();
+                    NumericFieldSet<NihNumericIntersections> intersectionsNumericFieldSet = traversedVertex.getExtraNumericFields();
+                    if (intersectionsNumericFieldSet != null) {
+                        EnumMap<NihNumericIntersections, Integer> intersectionNumericFields =
+                                intersectionsNumericFieldSet.getNumericValues();
 
-                    // Strangely, lane counts are associated with intersections and not edges.
-                    // What happens if streets with different lane counts intersect?
-                    int laneCt = intersectionNumericFields.get(NihNumericIntersections.LANE_COUNT);
-                    float signalLength = intersectionNumericFields.get(NihNumericIntersections.SIGNAL_TIME) /
-                            NumericFieldSet.SIGNAL_TIME_CONVERSION;
+                        // Strangely, lane counts are associated with intersections and not edges.
+                        // What happens if streets with different lane counts intersect?
+                        int laneCt = intersectionNumericFields.get(NihNumericIntersections.LANE_COUNT);
+                        float signalLength = intersectionNumericFields.get(NihNumericIntersections.SIGNAL_TIME) /
+                                NumericFieldSet.SIGNAL_TIME_CONVERSION;
 
-                    // set turn cost (traversal time, in seconds) based on lane count and time spent waiting to enter
+                        // set turn cost (traversal time, in seconds) based on lane count and time spent waiting to enter
 
-                    // if we have signal length, then there is a walk sign present
-                    if (signalLength > 0) {
-                        // pedestrian will have to wait up to signal length to enter; assume average wait is about half that time
-                        enterSeconds = signalLength / 2;
-                    } else if (intersectionType == IntersectionType.TRAFFIC_SIGNAL && signalType != Signalization.WALK_SIGNAL) {
-                        // an intersection controlled by a traffic light, but has no walk sign
-                        enterSeconds = 60;
-                    } else if (intersectionType == IntersectionType.STOP_SIGN) {
-                        // presumably drivers at a stop sign will allow pedestrians waiting to cross pretty quickly
-                        enterSeconds = 10;
-                    } else {
-                        // no stop sign, light, or walk signal; pedestrians might end up waiting a long time to enter
-                        enterSeconds = 180;
+                        // if we have signal length, then there is a walk sign present
+                        if (signalLength > 0) {
+                            // pedestrian will have to wait up to signal length to enter; assume average wait is about half that time
+                            enterSeconds = signalLength / 2;
+                        } else if (intersectionType == IntersectionType.TRAFFIC_SIGNAL && signalType != Signalization.WALK_SIGNAL) {
+                            // an intersection controlled by a traffic light, but has no walk sign
+                            enterSeconds = 60;
+                        } else if (intersectionType == IntersectionType.STOP_SIGN) {
+                            // presumably drivers at a stop sign will allow pedestrians waiting to cross pretty quickly
+                            enterSeconds = 10;
+                        } else {
+                            // no stop sign, light, or walk signal; pedestrians might end up waiting a long time to enter
+                            enterSeconds = 180;
+                        }
+
+
+                        traverseSeconds = laneCt * LANE_WIDTH_METERS * options.walkSpeed;
+                        realTurnCost = enterSeconds + traverseSeconds;
+
+                        if (crossRisk == CrossingRisk.LOW) {
+                            realTurnCost *= 0.5;
+                        } else if (crossRisk == CrossingRisk.SEVERE) {
+                            realTurnCost += 120;
+                        }
+
                     }
-
-
-                    traverseSeconds = laneCt * LANE_WIDTH_METERS * options.walkSpeed;
-                    realTurnCost = enterSeconds + traverseSeconds;
-
-                    if (crossRisk == CrossingRisk.LOW) {
-                        realTurnCost *= 0.5;
-                    } else if (crossRisk == CrossingRisk.SEVERE) {
-                        realTurnCost += 120;
-                    }
-
                 }
             }
             //////////////////////////////////////////////////////////

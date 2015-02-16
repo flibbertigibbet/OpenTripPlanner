@@ -541,13 +541,11 @@ public class NihShapefileStreetGraphBuilderImpl implements GraphBuilder {
                 val = (int) (lastAudit.getTime() / NumericFieldSet.INTEGER_DATE_CONVERSION);
             }
 
-            if (val == 0) {
-                LOG.warn("Skipping zero for option {}.  Was this intentional?", numericField.getFieldName());
-            } else {
-                nihNumericFieldSet.setValue(numericField, val);
-            }
+            // will set value to zero if none set
+            nihNumericFieldSet.setValue(numericField, val);
         }
 
+        LOG.info("Have numeric fields set: {}", nihNumericFieldSet.toString());
         for (StreetEdge edge : edges) {
             edge.setExtraNumericFields(nihNumericFieldSet);
         }
