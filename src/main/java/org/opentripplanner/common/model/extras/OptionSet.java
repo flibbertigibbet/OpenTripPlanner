@@ -6,10 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Collection of optional, extra information that may be set on an Edge or Vertex.
@@ -24,7 +21,7 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
     private static Logger LOG = LoggerFactory.getLogger(OptionSet.class);
 
     // cannot reference generic type in static block, so initialize option classes once with this flag
-    private static boolean optionsInitialized = false;
+    private static ArrayList<Class> optionsInitialized = new ArrayList(2);
 
     private transient EnumMap<T, Byte> optionValues;
 
@@ -36,7 +33,7 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
         optionValues = new EnumMap(clazz);
         enumClass = clazz;
 
-        if (!optionsInitialized) {
+        if (!optionsInitialized.contains(clazz)) {
             initializeOptions();
         }
     }
@@ -52,7 +49,7 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
                 LOG.error(e.getStackTrace().toString());
             }
         }
-        optionsInitialized = true;
+        optionsInitialized.add(enumClass);
     }
 
     /**
@@ -192,7 +189,7 @@ public class OptionSet<T extends Enum<T> & OptionFieldsFactory> implements Seria
         // This is why serialization methods have been overridden here:
         // it is necessary to force the option classes to initialize after the
         // enum type class has been set, but before the values EnumMap is set.
-        if (!optionsInitialized) {
+        if (!optionsInitialized.contains(enumClass)) {
             initializeOptions();
         }
 
