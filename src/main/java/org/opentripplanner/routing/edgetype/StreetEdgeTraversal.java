@@ -35,6 +35,9 @@ public class StreetEdgeTraversal {
     // http://en.wikipedia.org/wiki/Lane
     private static final double LANE_WIDTH_METERS = 3.7;
 
+    // constant for dealing with values ranging from 0 to 100
+    private static final double NIH_RANGE_WEIGHTING = 50;
+
     private static final double GREENWAY_SAFETY_FACTOR = 0.1;
 
     public static final byte CONCRETE_VAL = org.opentripplanner.common.model.extras.nihExtras.segmentFields.Surface.CONCRETE.getValue();
@@ -256,34 +259,40 @@ public class StreetEdgeTraversal {
                 int niceness = numericExtras.get(NihNumericSegments.NICENESS);
                 int pleasantness = numericExtras.get(NihNumericSegments.PLEASANTNESS);
                 int safety = numericExtras.get(NihNumericSegments.SAFE_SCORE);
-                int crowding = numericExtras.get(NihNumericSegments.CROWD_SCORE);
-                // TODO: how to weight off of these values?
+
+                /////////////////////////////////////////////////////////////////
+                // weight all routes for niceness/pleasantness/safety
+                // subtract 50 for these values (ranging from 0 to 100) so negative values reflect desirability
+                niceness -= NIH_RANGE_WEIGHTING;
+                pleasantness -= NIH_RANGE_WEIGHTING;
+                safety -= NIH_RANGE_WEIGHTING;
+
+                // modify weight for these up to 1/4 of original value, so they don't overwhelm other factors
+                niceness /= NIH_RANGE_WEIGHTING * 4;
+                pleasantness /= NIH_RANGE_WEIGHTING * 4;
+                safety /= NIH_RANGE_WEIGHTING * 4;
+
+                weight *= niceness;
+                weight *= pleasantness;
+                weight *= safety;
+                //////////////////////////////////////////////////////////////////
 
                 if (options.crowding != 0) {
-                    double crowdingPref = options.crowding;
-                    LOG.info("Have crowding preference of {}", crowdingPref);
+                    LOG.info("Have crowding preference of {}", options.crowding);
+                    int crowding = numericExtras.get(NihNumericSegments.CROWD_SCORE);
 
-                    // TODO: weight crowding with numericExtras value
+                    // crowding from shapefile ranges from 0 to 100;
+                    // subtract 50 so negative numbers reflect magnitude of quietness,
+                    // and positive numbers reflect magnitude of crowding
+                    // (assuming middle of range is neither quiet nor crowded)
+                    crowding -= NIH_RANGE_WEIGHTING;
 
-                    /*
-                    if (traffic == Traffic.LIGHT || traffic == Traffic.NO_TRAFFIC) {
-                        if (options.crowding == 1) {
-                            // prefer crowded areas
-                            weight *= 1.5;
-                        } else {
-                            // prefer quiet
-                            weight *= 0.5;
-                        }
-                    } else if (traffic == Traffic.HEAVY) {
-                        if (options.crowding == 1) {
-                            // prefer crowded areas
-                            weight *= 0.5;
-                        } else {
-                            // prefer quiet
-                            weight *= 1.5;
-                        }
-                    }
-                    */
+                    // If crowding preference param is negative, prefer quiet.
+                    double crowdingWeight = options.crowding * crowding / NIH_RANGE_WEIGHTING;
+                    // if crowding amount is preferable, now have positive value ranging from 0 to 1
+                    // if crowding amount is undesirable, now have negative value from 0 to -1
+                    weight -= crowdingWeight;
+                    LOG.info("Subtracting crowding weight: {}", crowdingWeight);
                 }
             }
 
@@ -411,12 +420,12 @@ public class StreetEdgeTraversal {
             // NIH turn cost preferences
 
             // use intersections data here to set turning costs
-            if (traversedVertex != null) {
+            OptionSet<NihIntersectionOptions> intersectionOptions = traversedVertex.getExtraOptionFields();
+            if (traversedVertex != null && intersectionOptions != null) {
                 // how long is spent waiting to cross, and then walking across the intersection
                 double enterSeconds;
                 double traverseSeconds;
 
-                OptionSet<NihIntersectionOptions> intersectionOptions = traversedVertex.getExtraOptionFields();
                 OptionAttribute intersectionType = intersectionOptions.getOption(NihIntersectionOptions.INTERSECTION_TYPE);
                 OptionAttribute signalType = intersectionOptions.getOption(NihIntersectionOptions.SIGNALIZATION);
                 OptionAttribute crossRisk = intersectionOptions.getOption(NihIntersectionOptions.CROSSING_RISK);
