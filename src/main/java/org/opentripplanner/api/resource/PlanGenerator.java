@@ -178,7 +178,6 @@ public class PlanGenerator {
                 request.from = from;
                 request.to = to;
                 request.rctx = null;
-                request.setRoutingContext(graph);
 
                 List<GraphPath> partialPaths = pathService.getPaths(request);
                 if (partialPaths == null || partialPaths.size() == 0) {
@@ -186,6 +185,8 @@ public class PlanGenerator {
                 }
 
                 GraphPath path = partialPaths.get(0);
+                Graph graph = path.getRoutingContext().graph;
+                request.setRoutingContext(graph);
                 paths.add(path);
                 from = to;
                 time = path.getEndTime();
@@ -426,8 +427,8 @@ public class PlanGenerator {
      */
     private Leg generateLeg(Graph graph, State[] states, boolean showIntermediateStops) {
         Leg leg = new Leg();
-
         Edge[] edges = new Edge[states.length - 1];
+        State lastState = states[states.length - 1];
 
         leg.startTime = makeCalendar(states[0]);
         leg.endTime = makeCalendar(states[states.length - 1]);

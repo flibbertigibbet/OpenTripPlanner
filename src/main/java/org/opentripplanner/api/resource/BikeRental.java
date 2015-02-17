@@ -40,7 +40,7 @@ import com.vividsolutions.jts.geom.Envelope;
 public class BikeRental {
 
     @Context
-    OTPServer server;
+    OTPServer otpServer;
 
     @GET
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML + Q, MediaType.TEXT_XML + Q })
@@ -49,7 +49,7 @@ public class BikeRental {
             @QueryParam("upperRight") String upperRight,
             @PathParam("routerId") String routerId) {
 
-        Graph graph = server.graphService.getGraph(routerId);
+        Graph graph = otpServer.graphService.getGraph(routerId);
         if (graph == null) return null;
         BikeRentalStationService bikeRentalService = graph.getService(BikeRentalStationService.class);
         if (bikeRentalService == null) return new BikeRentalStationList();

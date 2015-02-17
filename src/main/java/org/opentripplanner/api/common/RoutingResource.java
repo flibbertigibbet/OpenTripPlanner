@@ -351,8 +351,13 @@ public abstract class RoutingResource {
             String d = get(date, n, null);
             String t = get(time, n, null);
             TimeZone tz;
-            Router router = otpServer.getRouter(request.routerId);
-            tz = router.graph.getTimeZone();
+            if (otpServer.graphService != null) { // in tests graphService can be null
+                tz = otpServer.graphService.getGraph(request.routerId).getTimeZone();
+            } else {
+                LOG.warn("No graph service available, using default time zone.");
+                tz = TimeZone.getDefault();
+                LOG.info("Time zone set to {}", tz);
+            }
             if (d == null && t != null) { // Time was provided but not date
                 LOG.debug("parsing ISO datetime {}", t);
                 try {
@@ -415,8 +420,8 @@ public abstract class RoutingResource {
         request.setArriveBy(get(arriveBy, n, false));
         request.showIntermediateStops = get(showIntermediateStops, n, request.showIntermediateStops);
         /* intermediate places and their ordering are shared because they are themselves a list */
-        if (intermediatePlaces != null && intermediatePlaces.size() > 0 
-            && ! intermediatePlaces.get(0).equals("")) {
+        if (intermediatePlaces != null && intermediatePlaces.size() > 0
+                && !intermediatePlaces.get(0).equals("")) {
             request.setIntermediatePlacesFromStrings(intermediatePlaces);
         }
         request.setPreferredRoutes(get(preferredRoutes, n, request.getPreferredRouteStr()));

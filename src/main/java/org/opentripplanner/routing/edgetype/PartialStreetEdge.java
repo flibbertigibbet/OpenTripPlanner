@@ -16,6 +16,8 @@ package org.opentripplanner.routing.edgetype;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.LineString;
 import org.opentripplanner.common.TurnRestriction;
+import org.opentripplanner.routing.core.RoutingContext;
+import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.vertextype.StreetVertex;
@@ -47,14 +49,6 @@ public class PartialStreetEdge extends StreetWithElevationEdge {
         setToiletCount(parentEdge.getToiletCount());
 
         this.parentEdge = parentEdge;
-    }
-    
-    /**
-     * Simplifies construction by copying some stuff from the parentEdge.
-     */
-    public PartialStreetEdge(StreetEdge parentEdge, StreetVertex v1, StreetVertex v2,
-                             LineString geometry, String name, double length) {
-        this(parentEdge, v1, v2, geometry, name, length, parentEdge.getPermission(), false);
     }
 
     /**

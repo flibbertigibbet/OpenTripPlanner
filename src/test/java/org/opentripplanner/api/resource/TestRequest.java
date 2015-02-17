@@ -29,7 +29,6 @@ import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
 import junit.framework.TestCase;
-
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.model.Stop;
@@ -61,7 +60,6 @@ import org.opentripplanner.routing.bike_rental.BikeRentalStation;
 import org.opentripplanner.routing.bike_rental.BikeRentalStationService;
 import org.opentripplanner.routing.core.OptimizeType;
 import org.opentripplanner.routing.core.RoutingRequest;
-import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.core.StopMatcher;
 import org.opentripplanner.routing.core.StopTransfer;
 import org.opentripplanner.routing.core.TransferTable;
@@ -75,7 +73,6 @@ import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
 import org.opentripplanner.routing.impl.DefaultStreetVertexIndexFactory;
 import org.opentripplanner.routing.impl.MemoryGraphSource;
-import org.opentripplanner.routing.impl.TravelingSalesmanPathService;
 import org.opentripplanner.routing.services.AlertPatchService;
 import org.opentripplanner.routing.services.GraphService;
 import org.opentripplanner.routing.spt.GraphPath;
@@ -518,7 +515,7 @@ public class TestRequest extends TestCase {
      *                if false, number of legs should be exact
      */
     private void checkLegsWithTransferPenalty(TestPlanner planner, int transferPenalty,
-            int expectedLegs, boolean smaller) {
+                                              int expectedLegs, boolean smaller) {
         // Set transfer penalty
         planner.setTransferPenalty(Arrays.asList(transferPenalty));
         // Do the planning
@@ -791,8 +788,8 @@ public class TestRequest extends TestCase {
      * Add a trip-to-trip transfer time to a transfer table and check the result
      */
     private void addTripToTripTransferTimeToTable(TransferTable table, String fromStopId,
-            String toStopId, String fromRouteId, String toRouteId, String fromTripId,
-            String toTripId, int transferTime) {
+                                                  String toStopId, String fromRouteId, String toRouteId, String fromTripId,
+                                                  String toTripId, int transferTime) {
         Stop fromStop = new Stop();
         fromStop.setId(new AgencyAndId("TriMet", fromStopId));
         Stop toStop = new Stop();
@@ -815,7 +812,7 @@ public class TestRequest extends TestCase {
      * Add a stop-to-stop transfer time to a transfer table and check the result
      */
     private void addStopToStopTransferTimeToTable(TransferTable table, String fromStopId,
-            String toStopId, int transferTime) {
+                                                  String toStopId, int transferTime) {
         Stop fromStop = new Stop();
         fromStop.setId(new AgencyAndId("TriMet", fromStopId));
         Stop toStop = new Stop();
@@ -838,8 +835,8 @@ public class TestRequest extends TestCase {
      * Apply an update to a table trip pattern and check whether the update was applied correctly
      */
     private void applyUpdateToTripPattern(TripPattern pattern, String tripId, String stopId,
-            int stopSeq, int arrive, int depart, ScheduleRelationship scheduleRelationship,
-            int timestamp, ServiceDate serviceDate) throws ParseException {
+                                          int stopSeq, int arrive, int depart, ScheduleRelationship scheduleRelationship,
+                                          int timestamp, ServiceDate serviceDate) throws ParseException {
         Graph graph = Context.getInstance().graph;
         TimetableResolver snapshot = graph.timetableSnapshotSource.getTimetableSnapshot();
         Timetable timetable = snapshot.resolve(pattern, serviceDate);

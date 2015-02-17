@@ -122,4 +122,8 @@ public class OTPServer {
         };
     }
 
+    public GraphService getGraphService() {
+        return this.graphService;
+    }
+
 }
