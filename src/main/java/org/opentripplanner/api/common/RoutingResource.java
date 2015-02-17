@@ -88,14 +88,14 @@ public abstract class RoutingResource {
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /** NIH routing paramters */
-    @DefaultValue("true") @QueryParam("allowCrossSlope") protected Boolean allowCrossSlope;
-    @DefaultValue("false") @QueryParam("restingPlaces") protected Boolean restingPlaces;
-    @DefaultValue("false") @QueryParam("usingWalkerCane") protected Boolean usingWalkerCane;
+    @DefaultValue("true") @QueryParam("allowCrossSlope") protected List<Boolean> allowCrossSlope;
+    @DefaultValue("false") @QueryParam("restingPlaces") protected List<Boolean> restingPlaces;
+    @DefaultValue("false") @QueryParam("usingWalkerCane") protected List<Boolean> usingWalkerCane;
     // crowding: -0 indicates don't care; -1 (quiet) to 1 (crowded)
-    @DefaultValue("0") @QueryParam("crowding") protected Double crowding;
+    @DefaultValue("0") @QueryParam("crowding") protected List<Double> crowding;
     // steepness factor: 0: (normal incline weighting) to 1 (avoid steep inclines)
-    @DefaultValue("0") @QueryParam("steepnessFactor") protected Double steepnessFactor;
-    @DefaultValue("1") @QueryParam("surfaceComfort") protected Double surfaceComfort;
+    @DefaultValue("0") @QueryParam("steepnessFactor") protected List<Double> steepnessFactor;
+    @DefaultValue("1") @QueryParam("surfaceComfort") protected List<Double> surfaceComfort;
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     /** The maximum distance (in meters) the user is willing to walk. Defaults to unlimited. */
@@ -379,8 +379,17 @@ public abstract class RoutingResource {
             }
         }
         request.setWheelchairAccessible(get(wheelchair, n, request.wheelchairAccessible));
+        //////////////////////////////////////////////////////////////////////////////
         request.setPreferBenches(get(benches, n, request.preferBenches));
         request.setPreferToilets(get(toilets, n, request.preferToilets));
+        //////////////////////////////////////////////////////////////////////////////
+        request.setAllowCrossSlope(get(allowCrossSlope, n, request.allowCrossSlope));
+        request.setCrowding(get(crowding, n, request.crowding));
+        request.setUsingWalkerCane(get(usingWalkerCane, n, request.usingWalkerCane));
+        request.setRestingPlaces(get(restingPlaces, n, request.restingPlaces));
+        request.setSurfaceComfort(get(surfaceComfort, n, request.surfaceComfort));
+        request.setSteepnessFactor(get(steepnessFactor, n, request.steepnessFactor));
+        /////////////////////////////////////////////////////////////////////////////
         request.setNumItineraries(get(numItineraries, n, request.getNumItineraries()));
         request.setMaxWalkDistance(get(maxWalkDistance, n, request.getMaxWalkDistance()));
         request.setMaxPreTransitTime(get(maxPreTransitTime, n, request.maxPreTransitTime));

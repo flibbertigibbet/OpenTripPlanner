@@ -203,11 +203,8 @@ public class StreetEdgeTraversal {
                     return null;
                 } else if (options.usingWalkerCane || options.wheelchairAccessible) {
                     // strongly prefer to avoid cross slope for wheelchairs, walkers, or canes
+                    LOG.info("Avoiding edge {}: {} for accessibility due to cross slope", edge.getName(), edge.getOsmId());
                     weight *= 2;
-                } else {
-                    // negatively weight cross-sloped edge
-                    LOG.info("Avoiding edge {}: {} due to cross slope", edge.getName(), edge.getOsmId());
-                    weight *= 1.2;
                 }
             }
 

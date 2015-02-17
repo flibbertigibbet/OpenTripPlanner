@@ -69,6 +69,11 @@ public class Planner extends RoutingResource {
             // fill in request from query parameters via shared superclass method
             request = super.buildRequest();
             TripPlan plan = otpServer.planGenerator.generate(request);
+
+            /////////////////////////////////////
+            LOG.info("Going to generate a plan for request {}", request.toString());
+            ////////////////////////////////////
+
             response.setPlan(plan);
         } catch (Exception e) {
             PlannerError error = new PlannerError(e);
