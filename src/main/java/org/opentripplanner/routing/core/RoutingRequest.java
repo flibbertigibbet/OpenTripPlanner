@@ -826,23 +826,33 @@ public class RoutingRequest implements Cloneable, Serializable {
         }
         if (!allowCrossSlope) {
             sb.append(sep);
-            sb.append("avoid cross slope");
+            sb.append("NO XSLOPE");
         }
         if (restingPlaces) {
             sb.append(sep);
-            sb.append("seeking resting places");
+            sb.append("REST");
         }
 
         if (usingWalkerCane) {
             sb.append(sep);
-            sb.append("using walker or cane");
+            sb.append("WALKER/CANE");
+        }
+
+        if (wheelchairAccessible) {
+            sb.append(sep);
+            sb.append("WHEELCHAIR");
         }
 
         if (crowding != 0) {
             sb.append(sep);
-            sb.append("crowding");
-            sb.append(sep);
+            sb.append("CROWDING=");
             sb.append(crowding);
+        }
+
+        if (surfaceComfort != 1) {
+            sb.append(sep);
+            sb.append("SURFACE=");
+            sb.append(surfaceComfort);
         }
 
         return sb.toString();
