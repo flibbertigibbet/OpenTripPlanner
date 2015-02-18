@@ -189,21 +189,23 @@ public class StreetEdgeTraversal {
         NumericFieldSet numericFieldSet = edge.getExtraNumericFields();
 
         if (extraOptions != null || numericFieldSet != null) {
-            LOG.info("Found audited edge {}: {}", edge.getName(), edge.getOsmId());
+
+            LOG.info("Audited edge {}: {} has initial OTP weight {} and time {}", edge.getName(), edge.getOsmId(), weight, time);
 
             // prefer audited edges
             weight *= 0.8;
+            LOG.info("weight *=0.8 for being audited. edge {}: {}", edge.getName(), edge.getOsmId());
 
             // check for NIH routing params
             OptionAttribute slope = extraOptions.getOption(NihSegmentOptions.XSLOPE);
             if ((slope != null) && (slope == org.opentripplanner.common.model.extras.nihExtras.segmentFields.XSlope.SLOPED)) {
                 s1.setHasCrossSlope(); // mark state
                 if (!options.allowCrossSlope) {
-                    LOG.info("Not taking edge {}: {} due to cross slope", edge.getName(), edge.getOsmId());
+                    LOG.info("Banning edge {}: {} due to cross slope when options disallow it", edge.getName(), edge.getOsmId());
                     return null;
                 } else if (options.usingWalkerCane || options.wheelchairAccessible) {
                     // strongly prefer to avoid cross slope for wheelchairs, walkers, or canes
-                    LOG.info("Avoiding edge {}: {} for accessibility due to cross slope", edge.getName(), edge.getOsmId());
+                    LOG.info("weight *=2 edge {}: {} due to cross slope while using wheelchair/walker/cane", edge.getName(), edge.getOsmId());
                     weight *= 2;
                 }
             }
@@ -212,38 +214,36 @@ public class StreetEdgeTraversal {
             if ((rest != null) && (rest != org.opentripplanner.common.model.extras.nihExtras.segmentFields.Rest.NONE_AVAILABLE)) {
                 s1.setPassesRestingPlaces(); // mark state
                 if (options.restingPlaces) {
-                    LOG.info("Preferring edge {}: {} with resting place {}", edge.getName(), edge.getOsmId(), rest.getLabel());
-                    weight *= 0.1;
-                    time *= 0.1;
+                    LOG.info("weight *=0.5 and time *=0.5 for edge {}: {} with resting place {} when resting places preferred",
+                            edge.getName(), edge.getOsmId(), rest.getLabel());
+                    weight *= 0.5;
+                    time *= 0.5;
                 }
             }
-
-            /*
-            if (options.walkSpeed <= SLIGHTLY_SLOW_WALKSPEED) {
-                // TODO: number of lanes is missing from shapefile.
-                // use it to increase weight for lots of lanes for slow walkers.
-            }
-            */
 
             OptionAttribute curbRamp = extraOptions.getOption(NihSegmentOptions.CURB_RAMP);
             if (curbRamp == org.opentripplanner.common.model.extras.nihExtras.segmentFields.CurbRamp.YES) {
                 // prefer audited edges with curb ramps
                 weight *= 0.9;
+                LOG.info("weight *=0.9 for having curb ramps", edge.getName(), edge.getOsmId());
             } else if (curbRamp == org.opentripplanner.common.model.extras.nihExtras.segmentFields.CurbRamp.NO && (options.wheelchairAccessible || options.usingWalkerCane)) {
                 // avoid streets without curb ramps if using wheelchair, walker or cane
-                weight *= 2;
+                weight *= 3;
+                LOG.info("weight *=3 for no curb ramp when using wheelchair/walker/cane", edge.getName(), edge.getOsmId());
             }
 
             OptionAttribute sidewalk = extraOptions.getOption(NihSegmentOptions.SIDEWALK);
             if (sidewalk == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Sidewalk.YES) {
                 // prefer audited edges with a sidewalk
                 weight *= 0.8;
+                LOG.info("weight *=0.8 for having a sidewalk", edge.getName(), edge.getOsmId());
             }
 
             OptionAttribute aesthetic = extraOptions.getOption(NihSegmentOptions.AESTHETIC);
             if (aesthetic == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Aesthetics.YES) {
                 // prefer pretty edges
                 weight *= 0.9;
+                LOG.info("weight *=0.9 for aesthetic value", edge.getName(), edge.getOsmId());
                 s1.setIsAesthetic(); // mark state
             }
 
@@ -270,6 +270,8 @@ public class StreetEdgeTraversal {
                 weight += niceness;
                 weight += pleasantness;
                 weight += safety;
+
+                LOG.info("weight +={} for niceness + pleasantness + safety", edge.getName(), edge.getOsmId(), niceness + pleasantness + safety);
                 //////////////////////////////////////////////////////////////////
 
                 if (options.crowding != 0) {
@@ -294,7 +296,7 @@ public class StreetEdgeTraversal {
             if (options.wheelchairAccessible) {
                  OptionAttribute width = extraOptions.getOption(NihSegmentOptions.WIDTH);
                  if (width == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Width.LESS_THAN_FOUR_FEET || width == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Width.FOUR_TO_FIVE_FEET) {
-                     LOG.info("Avoiding narrow sidewalk on {}: {}", edge.getName(), edge.getOsmId());
+                     LOG.info("weight *=2 for narrow sidewalk on {}: {}", edge.getName(), edge.getOsmId());
                      // strongly prefer streets wider than 5 feet for wheelchairs
                      weight *= 2;
                  }
@@ -304,7 +306,7 @@ public class StreetEdgeTraversal {
             // avoid non-concrete surfaces for wheelchairs or walker/cane
             if (options.wheelchairAccessible || options.usingWalkerCane) {
                  if (surface != null && surface != org.opentripplanner.common.model.extras.nihExtras.segmentFields.Surface.CONCRETE) {
-                     LOG.info("Avoiding edge {}: {} due to surface {}", edge.getName(), edge.getOsmId(), surface.getLabel());
+                     LOG.info("weight *=2 for edge {}: {} due to surface {}", edge.getName(), edge.getOsmId(), surface.getLabel());
                      weight *= 2;
                  }
             }
@@ -317,7 +319,7 @@ public class StreetEdgeTraversal {
                 double val = (Math.abs(surface.getValue() - CONCRETE_VAL) / 4.0);
                 // reverse input param range of 0 (not comfortable) to 1 (very comfortable)
                 double surfaceWeight = (1 - options.surfaceComfort) * val;
-                LOG.info("Avoiding edge {}: {} with surface {} using added weight {}", edge.getName(), edge.getOsmId(),
+                LOG.info("Avoiding edge {}: {} with surface {} by adding to weight {}", edge.getName(), edge.getOsmId(),
                         surface.getLabel(), surfaceWeight);
                 weight += surfaceWeight;
             }
@@ -326,16 +328,21 @@ public class StreetEdgeTraversal {
             if (hazard != null) {
                 if (hazard == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Hazards.NO_HAZARDS) {
                     weight *= 0.8;
+                    LOG.info("weight *= 0.8 for no hazards - {}: {}", edge.getName(), edge.getOsmId());
                 } else if (hazard == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Hazards.LOW) {
                     weight *= 1.1;
+                    LOG.info("weight *= 1.1 for low hazard level - {}: {}", edge.getName(), edge.getOsmId());
                 } else if (hazard == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Hazards.MODERATE) {
                     weight *= 1.5;
+                    LOG.info("weight *= 1.5 for moderate hazard level - {}: {}", edge.getName(), edge.getOsmId());
                 } else if (hazard == org.opentripplanner.common.model.extras.nihExtras.segmentFields.Hazards.HIGH) {
                     weight *= 1.7;
+                    LOG.info("weight *= 1.7 for high hazard level - {}: {}", edge.getName(), edge.getOsmId());
                 } else {
                     LOG.warn("Hazard level {} not recognized", hazard.getLabel());
                 }
             }
+            LOG.info("Audited edge {}: {} has final modified weight {} and time {}", edge.getName(), edge.getOsmId(), weight, time);
         }
         //////////////////////////////////
 
@@ -422,6 +429,8 @@ public class StreetEdgeTraversal {
                     double enterSeconds;
                     double traverseSeconds;
 
+                    LOG.info("Audited intersection {} has initial OTP realTurnCost", edge.getName(), edge.getOsmId(), realTurnCost);
+
                     OptionAttribute intersectionType = intersectionOptions.getOption(NihIntersectionOptions.INTERSECTION_TYPE);
                     OptionAttribute signalType = intersectionOptions.getOption(NihIntersectionOptions.SIGNALIZATION);
                     OptionAttribute crossRisk = intersectionOptions.getOption(NihIntersectionOptions.CROSSING_RISK);
@@ -454,17 +463,19 @@ public class StreetEdgeTraversal {
                             enterSeconds = 180;
                         }
 
-
                         traverseSeconds = laneCt * LANE_WIDTH_METERS * options.walkSpeed;
                         realTurnCost = enterSeconds + traverseSeconds;
+                        LOG.info("Intersection {} seconds to enter: {}, traversal seconds: {}",
+                                traversedVertex.getLabel(), enterSeconds, traverseSeconds);
 
                         if (crossRisk == CrossingRisk.LOW) {
                             realTurnCost *= 0.5;
                         } else if (crossRisk == CrossingRisk.SEVERE) {
+                            LOG.info("Increasing intersection traversal cost of {} by 120s due to severe risk", traversedVertex.getLabel());
                             realTurnCost += 120;
                         }
-
                     }
+                    LOG.info("Audited intersection {} has final modified realTurnCost {} (enter + traverse)", traversedVertex.getLabel(), realTurnCost);
                 }
             }
             //////////////////////////////////////////////////////////
