@@ -271,7 +271,7 @@ public class StreetEdgeTraversal {
                 weight += pleasantness;
                 weight += safety;
 
-                LOG.info("weight +={} for niceness + pleasantness + safety", edge.getName(), edge.getOsmId(), niceness + pleasantness + safety);
+                LOG.info("weight +={} for niceness + pleasantness + safety", niceness + pleasantness + safety);
                 //////////////////////////////////////////////////////////////////
 
                 if (options.crowding != 0) {
@@ -429,7 +429,7 @@ public class StreetEdgeTraversal {
                     double enterSeconds;
                     double traverseSeconds;
 
-                    LOG.info("Audited intersection {} has initial OTP realTurnCost", edge.getName(), edge.getOsmId(), realTurnCost);
+                    LOG.info("Audited intersection {}: {} has initial OTP realTurnCost", edge.getName(), edge.getOsmId(), realTurnCost);
 
                     OptionAttribute intersectionType = intersectionOptions.getOption(NihIntersectionOptions.INTERSECTION_TYPE);
                     OptionAttribute signalType = intersectionOptions.getOption(NihIntersectionOptions.SIGNALIZATION);
