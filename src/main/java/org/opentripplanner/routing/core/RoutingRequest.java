@@ -548,16 +548,18 @@ public class RoutingRequest implements Cloneable, Serializable {
     }
 
     public void setCrowding(double crowding) {
-        if (crowding > 1) {
+        if (crowding > 1.0) {
             LOG.warn("Invalid crowding value of {} passed in; correcting to 1 (range of -1 to 1)");
             this.crowding = 1;
             return;
-        } else if (crowding < -1) {
+        } else if (crowding < -1.0) {
             LOG.warn("Invalid crowding value of {} passed in; correcting to -1 (range of -1 to 1)");
             this.crowding = -1;
             return;
         }
-        if (crowding >= 0) LOG.info("Setting crowding preference to {}", crowding);
+        if (crowding != 0) {
+            LOG.info("Setting crowding preference to {}", crowding);
+        }
         this.crowding = crowding;
     }
 
