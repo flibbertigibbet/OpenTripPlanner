@@ -1,3 +1,4 @@
+out/
 target/
 build/
 dist/
@@ -19,6 +20,7 @@ otp-openlayers-client/src/main/webapp/js/otp-min.js
 *.iws
 *.swp
 .externalToolBuilders
+dependency-reduced-pom.xml
 gen-java/
 gen-javabean/
 gen-py/
