@@ -192,7 +192,9 @@ public class OTPConfigurator {
                 GraphBuilder elevationBuilder = new ElevationGraphBuilderImpl(gcf);
                 graphBuilder.addGraphBuilder(elevationBuilder);
             }
-            graphBuilder.addGraphBuilder(new TransitToStreetNetworkGraphBuilderImpl());
+            if ( !hasGTFS ) {
+                graphBuilder.addGraphBuilder(new TransitToStreetNetworkGraphBuilderImpl());
+            }
             graphBuilder.addGraphBuilder(new PruneFloatingIslands());
         }
         if ( hasGTFS ) {
@@ -220,6 +222,7 @@ public class OTPConfigurator {
             }
             if ( hasOSM ) {
                 graphBuilder.addGraphBuilder(new TransitToTaggedStopsGraphBuilderImpl());
+                graphBuilder.addGraphBuilder(new TransitToStreetNetworkGraphBuilderImpl());
                 // The stops can be linked to each other once they have links to the street network.
                 if (params.longDistance && params.useStreetsForLinking && !params.useTransfersTxt) {
                     graphBuilder.addGraphBuilder(new StreetfulStopLinker());
