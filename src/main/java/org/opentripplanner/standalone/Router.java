@@ -64,8 +64,6 @@ public class Router {
      */
     public void startup(JsonNode config) {
 
-        LOG.info("Using router config for router '{}': {}", this.id, config);
-
         this.tileRendererManager = new TileRendererManager(this.graph);
 
         // Analyst Modules FIXME make these optional based on JSON?
