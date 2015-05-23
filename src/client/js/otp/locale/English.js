@@ -54,12 +54,12 @@ otp.locale.English = {
     infoWidgets : [
             {
                 title: 'About',
-                content: '<p>About this site</p>',
+                content: '<h3>About this site</h3><p>This is an instance of <a href="https://github.com/opentripplanner/OpenTripPlanner">OpenTripPlanner</a> deployed and maintained by volunteers at <a href="https://codeforphilly.org">Code for Philly</a>.  Our project page is <a href="https://codeforphilly.org/projects/otp">here</a>.</p>',
                 //cssClass: 'otp-contactWidget',
             },
             {
                 title: 'Contact',
-                content: '<p>Comments? Contact us at...</p>'
+                content: '<p>Comments? <a href="https://codeforphilly.org/contact">Contact us</a>.</p>'
             },
     ],
 

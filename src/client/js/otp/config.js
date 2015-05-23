@@ -68,6 +68,30 @@ otp.config = {
 
     baseLayers: [
         {
+            name: 'Stamen Terrain',
+            tileUrl: 'http://{s}.tile.stamen.com/terrain/{z}/{x}/{y}.jpg',
+            subdomains: ['a', 'b', 'c', 'd'],
+            attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.'
+        },
+        {
+            name: 'Stamen Toner Lite',
+            tileUrl: 'http://{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.jpg',
+            subdomains: ['a', 'b', 'c', 'd'],
+            attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
+        },
+        {
+            name: 'CartoDB Positron',
+            tileUrl: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+            subdomains: ['a', 'b', 'c', 'd'],
+            attribution: 'Map tiles by <a href="http://cartodb.com/attributions#basemaps">CartoDB</a>, under <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>. Data by <a href="http://www.openstreetmap.org/">OpenStreetMap</a>, under ODbL.'
+        },
+        {
+            name: 'CartoDB Dark Matter',
+            tileUrl: 'http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+            subdomains: ['a', 'b', 'c', 'd'],
+            attribution: 'Map tiles by <a href="http://cartodb.com/attributions#basemaps">CartoDB</a>, under <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>. Data by <a href="http://www.openstreetmap.org/">OpenStreetMap</a>, under ODbL.'
+        },
+        {
             name: 'Transport Tiles',
             tileUrl: 'http://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png',
             subdomains : ['a','b','c'],
@@ -105,15 +129,15 @@ otp.config = {
     // maxZoom : 20,
     
     /* Whether the map should be moved to contain the full itinerary when a result is received. */
-    zoomToFitResults    : false,
+    zoomToFitResults    : true,
 
     /**
      * Site name / description / branding display options
      */
 
-    siteName            : "My OTP Instance",
-    siteDescription     : "An OpenTripPlanner deployment.",
-    logoGraphic         : 'images/otp_logo_darkbg_40px.png',
+    siteName            : "Code for Philly OpenTripPlanner",
+    siteDescription     : "Multi-modal trip planner for PA, NJ, NY, DE, and CT.",
+    logoGraphic         : 'images/code_for_philly_logo.png',
     // bikeshareName    : "",
     //Enable this if you want to show frontend language chooser
     showLanguageChooser : true,
@@ -140,7 +164,7 @@ otp.config = {
         {
             id : 'planner',
             className : 'otp.modules.multimodal.MultimodalPlannerModule',
-            defaultBaseLayer : 'MapQuest OSM',
+            defaultBaseLayer : 'CartoDB Positron',
             isDefault: true
         },
         {
