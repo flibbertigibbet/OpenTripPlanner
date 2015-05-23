@@ -138,7 +138,7 @@ otp.config = {
     siteName            : "Code for Philly OpenTripPlanner",
     siteDescription     : "Multi-modal trip planner for PA, NJ, NY, DE, and CT.",
     logoGraphic         : 'images/code_for_philly_logo.png',
-    // bikeshareName    : "",
+    bikeshareName       : "Indego",
     //Enable this if you want to show frontend language chooser
     showLanguageChooser : true,
 
@@ -341,8 +341,8 @@ otp.config.modes = {
     // IDEA: maybe we start with a big array (like below), and the pull out modes from this array when turning off various modes...
     //TRANSLATORS: Travel by: mode of transport (Used in selection in Travel
     //Options widgets)
-    //    'WALK,BICYCLE_RENT'        :_tr('Rented Bicycle'),
+    'WALK,BICYCLE_RENT'        :_tr('Rented Bicycle'),
     //TRANSLATORS: Travel by: mode of transport (Used in selection in Travel
     //Options widgets)
-    //    'TRANSIT,WALK,BICYCLE_RENT': _tr('Transit & Rented Bicycle')
+    'TRANSIT,WALK,BICYCLE_RENT': _tr('Transit & Rented Bicycle')
     };

@@ -53,8 +53,25 @@ otp.locale.English = {
      */
     infoWidgets : [
             {
-                title: 'About',
-                content: '<h3>About this site</h3><p>This is an instance of <a href="https://github.com/opentripplanner/OpenTripPlanner">OpenTripPlanner</a> deployed and maintained by volunteers at <a href="https://codeforphilly.org">Code for Philly</a>.  Our project page is <a href="https://codeforphilly.org/projects/otp">here</a>.</p>',
+                title: 'About this site',
+                content: ['<h2>Code for Philly OpenTripPlanner</h2><p>This is an instance of ',
+                          '<a href="https://github.com/opentripplanner/OpenTripPlanner">OpenTripPlanner</a>',
+                          ' deployed and maintained by volunteers at ',
+                          '<a href="https://codeforphilly.org">Code for Philly</a>. ',
+                          'Our project page is <a href="https://codeforphilly.org/projects/otp">here</a>.</p>',
+                          '<p>Use of this website is at your own risk. We do not make any warranty as to the results ',
+                          'that may be obtained from use of this website or as to the accuracy, reliability or ',
+                          'contents of any information provided through this website.</p>',
+                          '<h3>Indego bike rental information:</h3>',
+                          '<p>For information on Indego bike rental in Philadelphia and to sign up,',
+                          'Visit the <a href="http://www.rideindego.com/">Indego web site</a>.</p>',
+                          '<p>Bike rental directions use the B-cycle API. ',
+                          // Disclaimer required for use of the B-cycle API.
+                          'Powered by B‐cycle. To sign up, go to ',
+                          '<a href="www.bcycle.com">www.bcycle.com</a>. This is a third-party application ',
+                          'not affiliated in any way with B-cycle. This is not a B-cycle site or application. ',
+                          '</p>'
+                          ].join(''),
                 //cssClass: 'otp-contactWidget',
             },
             {
