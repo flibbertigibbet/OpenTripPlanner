@@ -39,6 +39,7 @@ public class NominatimGeocoder implements Geocoder {
     private NominatimJsonDeserializer nominatimJsonDeserializer; 
     
     public NominatimGeocoder() {
+        this.setNominatimUrl("http://nominatim.openstreetmap.org/");
         nominatimJsonDeserializer = new NominatimJsonDeserializer();
     }
     
