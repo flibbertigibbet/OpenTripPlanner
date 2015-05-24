@@ -27,7 +27,7 @@ otp.core.Geocoder = otp.Class({
     
     geocode : function(address, setResultsCallback) {
     
-        var params = { format: 'json' }; 
+        var params = { }; 
         params[this.addressParam] = address;
         
         // Avoid out-of-order responses from the geocoding service. see #1419

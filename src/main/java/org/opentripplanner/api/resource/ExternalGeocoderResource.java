@@ -22,9 +22,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.sun.jersey.api.core.InjectParam;
 import org.opentripplanner.api.parameter.BoundingBox;
 import org.opentripplanner.geocoder.Geocoder;
 import org.opentripplanner.geocoder.GeocoderResults;
+import org.opentripplanner.geocoder.nominatim.NominatimGeocoder;
 
 import com.vividsolutions.jts.geom.Envelope;
 
@@ -35,8 +37,8 @@ import com.vividsolutions.jts.geom.Envelope;
 public class ExternalGeocoderResource {
   
 // uncommenting injectparam will require a specific Geocoder to be instantiated
-//    @InjectParam 
-    public Geocoder geocoder;
+    @InjectParam
+    public Geocoder geocoder = new NominatimGeocoder();
     
     @GET
     @Produces({MediaType.APPLICATION_JSON + "; charset=UTF-8"})
