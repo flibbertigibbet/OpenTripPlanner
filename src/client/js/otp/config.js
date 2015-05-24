@@ -190,6 +190,12 @@ otp.config = {
             name: 'OTP built-in geocoder',
             className: 'otp.core.GeocoderBuiltin'
             // URL and query parameter do not need to be set for built-in geocoder.
+        },
+        {
+            name: 'Nominatim',
+            className: 'otp.core.Geocoder',
+            url: 'http://nominatim.openstreetmap.org',
+            addressParam: 'q'
         }
     ],
 
