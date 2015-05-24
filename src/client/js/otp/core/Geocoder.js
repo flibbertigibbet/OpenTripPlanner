@@ -38,6 +38,14 @@ otp.core.Geocoder = otp.Class({
               if (xhr === lastXhr){
                 if((typeof data) == "string") data = jQuery.parseXML(data);
                 var results = [];
+
+                // external geocoder results
+                if (data.results) {
+                  setResultsCallback.call(this, data.results);
+                  return;
+                }
+
+                // Lucene internal results
                 $(data).find("geocoderResults").find("results").find("result").each(function () {
                     var resultXml = $(this);
                     
