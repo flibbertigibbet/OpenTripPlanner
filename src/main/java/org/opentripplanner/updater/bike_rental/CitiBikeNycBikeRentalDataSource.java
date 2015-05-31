@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 
 /**
- * Build a BikeRentalStation object from a B-Cycle data source JsonNode object.
+ * Build a BikeRentalStation object from CitiBike data source JsonNode object.
  *
  * @see GenericJsonBikeRentalDataSource
  */
