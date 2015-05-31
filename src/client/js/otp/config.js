@@ -138,7 +138,7 @@ otp.config = {
     siteName            : "Code for Philly OpenTripPlanner",
     siteDescription     : "Multi-modal trip planner for PA, NJ, NY, DE, and CT.",
     logoGraphic         : 'images/code_for_philly_logo.png',
-    bikeshareName       : "Indego",
+    //bikeshareName       : "Indego",
     //Enable this if you want to show frontend language chooser
     showLanguageChooser : true,
 
@@ -166,6 +166,10 @@ otp.config = {
             className : 'otp.modules.multimodal.MultimodalPlannerModule',
             defaultBaseLayer : 'CartoDB Positron',
             isDefault: true
+        },
+        {
+            id : 'bikeshare',
+            className : 'otp.modules.bikeshare.BikeShareModule'
         },
         {
             id : 'analyst',
