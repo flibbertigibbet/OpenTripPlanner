@@ -28,6 +28,12 @@ public class GraphBuilderParameters {
     public final boolean htmlAnnotations;
 
     /**
+     * If number of annotations is larger then specified number annotations will be split in multiple files.
+     * Since browsers have problems opening large HTML files.
+     */
+    public final int maxHtmlAnnotationsPerFile;
+
+    /**
      * Include all transit input files (GTFS) from scanned directory.
      */
     public final boolean transit;
@@ -118,7 +124,7 @@ public class GraphBuilderParameters {
         transit = config.path("transit").asBoolean(true);
         useTransfersTxt = config.path("useTransfersTxt").asBoolean(false);
         parentStopLinking = config.path("parentStopLinking").asBoolean(false);
-        stationTransfers = config.path("parentStationTransfers").asBoolean(false);
+        stationTransfers = config.path("stationTransfers").asBoolean(false);
         subwayAccessTime = config.path("subwayAccessTime").asDouble(DEFAULT_SUBWAY_ACCESS_TIME);
         streets = config.path("streets").asBoolean(true);
         embedRouterConfig = config.path("embedRouterConfig").asBoolean(true);
@@ -131,6 +137,7 @@ public class GraphBuilderParameters {
         staticBikeRental = config.path("staticBikeRental").asBoolean(false);
         staticParkAndRide = config.path("staticParkAndRide").asBoolean(true);
         staticBikeParkAndRide = config.path("staticBikeParkAndRide").asBoolean(false);
+        maxHtmlAnnotationsPerFile = config.path("maxHtmlAnnotationsPerFile").asInt(1000);
     }
 
 }
