@@ -61,7 +61,8 @@ public class GtfsBundle {
 
     public int subwayAccessTime;
 
-    private double maxStopToShapeSnapDistance = 150;
+    // bump default distance to 250m to avoid shapes.txt being ignored
+    private double maxStopToShapeSnapDistance = 250;
 
     public Boolean useCached = null; // null means use global default from GtfsGB || true
 

@@ -304,7 +304,8 @@ public class GTFSPatternHopFactory {
 
     public int subwayAccessTime = 0;
 
-    private double maxStopToShapeSnapDistance = 150;
+    // bumped from default of 150m to avoid shapes.txt being ignored
+    private double maxStopToShapeSnapDistance = 250;
 
     public GTFSPatternHopFactory(GtfsContext context) {
         this._dao = context.getDao();
