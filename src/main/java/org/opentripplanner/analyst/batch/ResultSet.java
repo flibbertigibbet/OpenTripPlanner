@@ -24,34 +24,54 @@ public class ResultSet {
     private static final Logger LOG = LoggerFactory.getLogger(ResultSet.class);
 
     public Population population;
-    public double[] results;
+    public int[] travelTimes;        // total travel time, in seconds
+    public double[] walkDistances;   // distance walked, in meters
+    public int[] boardings;          // transit vehicle boardings (# transfers + 1, or 0 if walking only)
+
     
     public static ResultSet forTravelTimes(Population population, ShortestPathTree spt) {
-        double[] results = new double[population.size()];
+        int[] travelTimes = new int[population.size()];
+        double[] walkDistances = new double[population.size()];
+        int[] boardings = new int[population.size()];
+
         int i = 0;
         for (Individual indiv : population) {
+
             Sample s = indiv.sample;
-            long t = Long.MAX_VALUE;
-            if (s == null)
-                t = -2;
-            else
-                t = s.eval(spt);
-            if (t == Long.MAX_VALUE)
-                t = -1;
-            results[i] = t;
+
+            if (s == null) {
+                continue;
+            } else {
+                long travelTime = s.eval(spt);
+                if (travelTime == Long.MAX_VALUE) {
+                    continue;
+                }
+
+                // if travel time is > 2,147,483,647 seconds (68 years),
+                // should really consider a better search cutoff :-)
+                travelTimes[i] = (int) travelTime;
+
+                walkDistances[i] = s.evalWalkDistance(spt);
+                boardings[i] = s.evalBoardings(spt);
+            }
+
             i++;
         }
-        return new ResultSet(population, results);
+        return new ResultSet(population, travelTimes, walkDistances, boardings);
     }
     
-    public ResultSet(Population population, double[] results) {
+    public ResultSet(Population population, int[] results, double[] walkDistnaces, int[] boardings) {
         this.population = population;
-        this.results = results;
+        this.travelTimes = results;
+        this.walkDistances = walkDistnaces;
+        this.boardings = boardings;
     }
     
     protected ResultSet(Population population) {
         this.population = population;
-        this.results = new double[population.size()];
+        this.travelTimes = new int[population.size()];
+        this.walkDistances = new double[population.size()];
+        this.boardings = new int[population.size()];
     }
 
     public void writeAppropriateFormat(String outFileName) {

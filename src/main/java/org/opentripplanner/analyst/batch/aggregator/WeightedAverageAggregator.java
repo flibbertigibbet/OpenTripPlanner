@@ -31,7 +31,7 @@ public class WeightedAverageAggregator implements Aggregator {
         int i = 0;
         int n = 0;
         for (Individual target: rs.population) {
-            double t = rs.results[i++];
+            double t = rs.travelTimes[i++];
             if (Double.isInfinite(target.input))
                 continue;
             if (Double.isInfinite(t) || t < 0)

@@ -33,9 +33,9 @@ public class ThresholdAccumulator implements Accumulator {
         }
         int n = accumulated.population.size();
         for (int i = 0; i < n; i++) {
-            double t = current.results[i]; 
+            double t = current.travelTimes[i];
             if (t > 0 && t < thresholdSeconds) {
-                accumulated.results[i] += amount;
+                accumulated.travelTimes[i] += amount;
             }
         }
     }

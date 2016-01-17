@@ -55,7 +55,7 @@ public class RasterPopulation extends BasicPopulation {
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
                 int index = row * cols + col;
-                float pixel = (float) (results.results[index]);
+                float pixel = (float) (results.travelTimes[index]);
                 if (unitySeconds > 0)
                     pixel /= unitySeconds;
                 imagePixelData[row][col] = pixel;

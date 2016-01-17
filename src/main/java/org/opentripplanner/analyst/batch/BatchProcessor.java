@@ -63,41 +63,16 @@ public class BatchProcessor {
     private TimeZone timeZone = TimeZone.getDefault();
     private String outputPath = "/tmp/analystOutput";
     private float checkpointIntervalMinutes = -1;
-    
-    enum Mode { BASIC, AGGREGATE, ACCUMULATE };
-    private Mode mode;
+
     private long startTime = -1;
     private long lastLogTime = 0;
     private long lastCheckpointTime = 0;
     private ResultSet aggregateResultSet = null;
-    
+
     /** Cut off the search instead of building a full path tree. Can greatly improve run times. */
     public void setSearchCutoffMinutes(int minutes) {
         this.searchCutoffSeconds = minutes * 60;
     }
-
-    /*
-    public static void main(String[] args) throws IOException {
-        org.springframework.core.io.Resource appContextResource;
-        if( args.length == 0) {
-            LOG.warn("no configuration XML file specified; using example on classpath");
-            appContextResource = new ClassPathResource(EXAMPLE_CONTEXT);
-        } else {
-            String configFile = args[0];
-            appContextResource = new FileSystemResource(configFile);
-        }
-        GenericApplicationContext ctx = new GenericApplicationContext();
-        XmlBeanDefinitionReader xmlReader = new XmlBeanDefinitionReader(ctx);
-        xmlReader.loadBeanDefinitions(appContextResource);
-        ctx.refresh();
-        ctx.registerShutdownHook();
-        BatchProcessor processor = ctx.getBean(BatchProcessor.class);
-        if (processor == null)
-            LOG.error("No BatchProcessor bean was defined.");
-        else
-            processor.run();
-    }
-    */
 
     private void run() {
         origins.setup();
@@ -110,15 +85,12 @@ public class BatchProcessor {
         CompletionService<Void> ecs = new ExecutorCompletionService<Void>(threadPool);
         if (aggregator != null) {
             /* aggregate over destinations and save one value per origin */
-            mode = Mode.AGGREGATE;
-            aggregateResultSet = new ResultSet(origins); // results shaped like origins
+            throw(new IllegalArgumentException("Aggregation/accumulation not supported for this batch type"));
         } else if (accumulator != null) { 
             /* accumulate data for each origin into all destinations */
-            mode = Mode.ACCUMULATE;
-            aggregateResultSet = new ResultSet(destinations); // results shaped like destinations
+            throw(new IllegalArgumentException("Aggregation/accumulation not supported for this batch type"));
         } else { 
             /* neither aggregator nor accumulator, save a bunch of results */
-            mode = Mode.BASIC;
             aggregateResultSet = null;
             if (!outputPath.contains("{}")) {
                 LOG.error("output filename must contain origin placeholder.");
@@ -249,20 +221,9 @@ public class BatchProcessor {
                 // ResultSet should be a local to avoid memory leak
                 ResultSet results = ResultSet.forTravelTimes(destinations, spt);
                 req.cleanup();
-                switch (mode) {
-                case ACCUMULATE:
-                    synchronized (aggregateResultSet) {
-                        accumulator.accumulate(oi.input, results, aggregateResultSet);
-                    }
-                    break;
-                case AGGREGATE:
-                    aggregateResultSet.results[i] = aggregator.computeAggregate(results);
-                    break;
-                default:
-                    String subName = outputPath.replace("{}", String.format("%d_%s", i, oi.label));
-                    results.writeAppropriateFormat(subName);
-                }
-                    
+
+                String subName = outputPath.replace("{}", String.format("%d_%s", i, oi.label));
+                results.writeAppropriateFormat(subName);
             }
         }        
     }    

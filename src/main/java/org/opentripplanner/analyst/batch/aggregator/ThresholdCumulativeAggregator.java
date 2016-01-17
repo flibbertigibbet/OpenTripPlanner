@@ -36,7 +36,7 @@ public class ThresholdCumulativeAggregator implements Aggregator {
         double aggregate = 0;
         int i = 0;
         for (Individual indiv : rs.population) {
-            double t = rs.results[i];
+            double t = rs.travelTimes[i];
             if (t > 0 && t < thresholdSeconds)
                 aggregate += indiv.input * (thresholdSeconds - t);
             i++;

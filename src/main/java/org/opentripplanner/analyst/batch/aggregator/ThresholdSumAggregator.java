@@ -31,7 +31,7 @@ public class ThresholdSumAggregator implements Aggregator {
         double aggregate = 0;
         int i = 0;
         for (Individual target : rs.population) {
-            double t = rs.results[i];
+            double t = rs.travelTimes[i];
             if (t > 0 && t < threshold)
                 aggregate += target.input;
             i++;

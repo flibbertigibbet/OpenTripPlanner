@@ -55,12 +55,12 @@ public class DecayAccumulator implements Accumulator {
         }
         int n = accumulated.population.size();
         for (int i = 0; i < n; i++) {
-            double t = current.results[i];
+            double t = current.travelTimes[i];
             // TODO: is there any reason why t == 0 is invalid? (mattwigway)
             if (t > 0) {
                 double decay = Math.exp(-lambda * t);
                 double decayed = amount * decay;
-                accumulated.results[i] += decayed;
+                accumulated.travelTimes[i] += decayed;
             }
         }
     }

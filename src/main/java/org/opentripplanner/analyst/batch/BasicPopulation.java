@@ -77,15 +77,17 @@ public class BasicPopulation implements Population {
         LOG.debug("Writing population to CSV: {}", outFileName);
         try {
             CsvWriter writer = new CsvWriter(outFileName, ',', Charset.forName("UTF8"));
-            writer.writeRecord( new String[] {"label", "lat", "lon", "input", "output"} );
+            writer.writeRecord( new String[] {"label", "travel_time", "walk_distance", "boardings"} );
             int i = 0;
             int j = 0;
             // using internal list rather than filtered iterator
             for (Individual indiv : this.individuals) {
                 if ( ! this.skip[i]) {
                     String[] entries = new String[] { 
-                            indiv.label, Double.toString(indiv.lat), Double.toString(indiv.lon), 
-                            Double.toString(indiv.input), Double.toString(results.results[j]) 
+                            indiv.label,
+                            Integer.toString(results.travelTimes[j]),
+                            Double.toString(results.walkDistances[j]),
+                            Integer.toString(results.boardings[j])
                     };
                     writer.writeRecord(entries);
                     j++;
