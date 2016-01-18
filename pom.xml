@@ -346,6 +346,8 @@
         </repository>
     </repositories>
 
+    <!-- Enunciate 1.29 is not yet in Maven Central Repository -->
+
     <dependencies>
         <!-- Amazon AWS client libraries -->
         <dependency>
