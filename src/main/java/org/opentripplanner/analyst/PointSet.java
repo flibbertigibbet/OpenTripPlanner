@@ -248,7 +248,6 @@ public class PointSet implements Serializable {
         String labelField = "";
         String descriptionField = "";
 
-        long ct = 0;
         // No property fields specified, so use all property fields
         for (Property p : protoFt.getProperties()) {
             String fieldName = p.getName().toString();
@@ -333,6 +332,7 @@ public class PointSet implements Serializable {
         	IDlist.add(id);
         }
         LOG.debug("Created PointSet from shapefile with IDs {}", IDlist);
+        store.dispose();
         return ret;
     }
 
