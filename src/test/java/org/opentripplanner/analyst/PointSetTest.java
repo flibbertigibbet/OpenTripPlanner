@@ -22,7 +22,7 @@ public class PointSetTest extends TestCase {
         assertNotNull(austin);
         assertEquals(austin.capacity, 15922);
         
-        assertEquals(-1, austin.getIndexForFeature("1"));
+        assertEquals(1, austin.getIndexForFeature("1"));
     }
 
     /** Factory method should return null but not throw an exception on malformed CSV. */
