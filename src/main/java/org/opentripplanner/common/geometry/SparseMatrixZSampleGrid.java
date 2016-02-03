@@ -13,6 +13,7 @@
 
 package org.opentripplanner.common.geometry;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -27,9 +28,9 @@ import com.vividsolutions.jts.geom.Coordinate;
  * @author laurent
  */
 public final class SparseMatrixZSampleGrid<TZ> implements ZSampleGrid<TZ>,
-        DelaunayTriangulation<TZ> {
+        DelaunayTriangulation<TZ>, Serializable {
 
-    private final class SparseMatrixSamplePoint implements ZSamplePoint<TZ>, DelaunayPoint<TZ> {
+    private final class SparseMatrixSamplePoint implements ZSamplePoint<TZ>, DelaunayPoint<TZ>, Serializable {
 
         private int x;
 
@@ -87,7 +88,7 @@ public final class SparseMatrixZSampleGrid<TZ> implements ZSampleGrid<TZ>,
 		}
     }
 
-    private final class GridDelaunayEdge implements DelaunayEdge<TZ> {
+    private final class GridDelaunayEdge implements DelaunayEdge<TZ>, Serializable {
 
         private static final int TYPE_VERTICAL = 0;
 

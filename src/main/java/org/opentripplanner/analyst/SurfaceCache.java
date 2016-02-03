@@ -23,7 +23,7 @@ public class SurfaceCache {
     private static final String CACHE_NAME = "time-surface";
     private static final Logger LOG = LoggerFactory.getLogger(SurfaceCache.class);
 
-    private static final int MAX_CACHE_MEMORY_GB = 6;
+    private static final int MAX_CACHE_MEMORY_GB = 3;
     private static final int MAX_CACHE_LOCAL_DISK_GB = 20;
 
     public SurfaceCache(File cacheDirectory) {

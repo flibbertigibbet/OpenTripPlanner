@@ -13,6 +13,7 @@
 
 package org.opentripplanner.common.geometry;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -27,7 +28,7 @@ import java.util.Map;
  * 
  * @author laurent
  */
-public class SparseMatrix<T> implements Iterable<T> {
+public class SparseMatrix<T> implements Iterable<T>, Serializable {
 
     private int shift; // How many low order bits to shift off to get the index of a chunk.
 
@@ -110,7 +111,7 @@ public class SparseMatrix<T> implements Iterable<T> {
     /*
      * We rely on the map iterator for checking for concurrent modification exceptions.
      */
-    private class SparseMatrixIterator implements Iterator<T> {
+    private class SparseMatrixIterator implements Iterator<T>, Serializable {
 
         private Iterator<T[]> mapIterator;
 
@@ -171,7 +172,7 @@ public class SparseMatrix<T> implements Iterable<T> {
      * (each of which is a flattened two-dimensional array).
      * We need to publish the internal structure to be able to efficiently export it through web-services.
      */
-    public class SparseMatrixChunk {
+    public class SparseMatrixChunk implements Serializable {
 
         public int x0, y0; // the coordinates of the minimum corner of this chunk (i.e. with the low bits)
 
@@ -228,7 +229,7 @@ public class SparseMatrix<T> implements Iterable<T> {
      * Long objects rather than primitive long ints. This purpose-built key object should be roughly the same in terms
      * of space and speed, and more readable.
      */
-    static class Key {
+    static class Key implements Serializable {
         int x, y;
         public Key(int x, int y, int shift) {
             this.x = x >>> shift; // shift off low order bits (index within chunk) retaining only the chunk number

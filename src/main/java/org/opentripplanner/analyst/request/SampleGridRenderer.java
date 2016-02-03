@@ -15,6 +15,7 @@ package org.opentripplanner.analyst.request;
 
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,7 +53,7 @@ import com.vividsolutions.jts.geom.Coordinate;
  * 
  * @author laurent
  */
-public class SampleGridRenderer {
+public class SampleGridRenderer implements Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(SampleGridRenderer.class);
 
@@ -166,7 +167,7 @@ public class SampleGridRenderer {
      * 
      * @author laurent
      */
-    public static class WTWD {
+    public static class WTWD implements Serializable {
         /* Total weight */
         public double w;
 
@@ -189,7 +190,7 @@ public class SampleGridRenderer {
             return String.format("[t/w=%f,w=%f,d=%f]", wTime / w, w, d);
         }
 
-        public static class IsolineMetric implements IsolineBuilder.ZMetric<WTWD> {
+        public static class IsolineMetric implements IsolineBuilder.ZMetric<WTWD>, Serializable {
             @Override
             public int cut(WTWD zA, WTWD zB, WTWD z0) {
                 double t0 = z0.wTime / z0.w;
@@ -227,7 +228,7 @@ public class SampleGridRenderer {
      * + 1 to the grid sample. We add to the sampling time a default off-road walk distance to
      * account for off-road sampling. TODO how does this "account" for off-road sampling ?
      */
-    public static class WTWDAccumulativeMetric implements AccumulativeGridSampler.AccumulativeMetric<WTWD> {
+    public static class WTWDAccumulativeMetric implements AccumulativeGridSampler.AccumulativeMetric<WTWD>, Serializable {
 
         private double cosLat, offRoadDistanceMeters, offRoadSpeed, gridSizeMeters;
 
