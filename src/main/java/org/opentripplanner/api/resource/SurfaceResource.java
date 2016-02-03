@@ -85,7 +85,6 @@ public class SurfaceResource extends RoutingResource {
                     // include only the first instance of each query parameter
                     surface.params.put(e.getKey(), e.getValue().get(0));
                 }
-                surface.renderer = new WeakReference<>(router.renderer);
                 otpServer.surfaceCache.add(surface);
                 return Response.ok().entity(new TimeSurfaceShort(surface)).build(); // .created(URI)
             } else {
@@ -100,7 +99,7 @@ public class SurfaceResource extends RoutingResource {
     /** List all the available surfaces. */
     @GET
     public Response getTimeSurfaceList () {
-        return Response.ok().entity(TimeSurfaceShort.list(otpServer.surfaceCache.cache.asMap().values())).build();
+        return Response.ok().entity(otpServer.surfaceCache.list()).build();
     }
 
     /** Describe a specific surface. */
@@ -174,12 +173,8 @@ public class SurfaceResource extends RoutingResource {
         MIMEImageFormat imageFormat = new MIMEImageFormat("image/png");
         RenderRequest renderRequest =
                 new RenderRequest(imageFormat, Layer.TRAVELTIME, Style.COLOR30, true, false);
-        Renderer renderer = surfA.renderer.get();
-        if (renderer == null) {
-            renderer = otpServer.getRouter(surfA.routerId).renderer;
-            surfA.renderer = new WeakReference<>(renderer);
-        }
-        return renderer.getResponse(tileRequest, surfA, null, renderRequest);
+       Router router = otpServer.getRouter(surfA.routerId);
+        return router.renderer.getResponse(tileRequest, surfA, null, renderRequest);
     }
     /**
      * Renders a raster tile for showing the difference between two TimeSurfaces.

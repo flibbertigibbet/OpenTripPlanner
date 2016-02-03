@@ -1,41 +1,92 @@
 package org.opentripplanner.analyst;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Queues;
 
-import org.opentripplanner.routing.spt.ShortestPathTree;
+import com.beust.jcommander.internal.Lists;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Ehcache;
+import net.sf.ehcache.Element;
+import net.sf.ehcache.config.*;
+import org.opentripplanner.api.model.TimeSurfaceShort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
+import java.io.File;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+
 
 /**
  * Caches travel time surfaces, which are derived from shortest path trees.
- * TODO add LRU behavior upon get
- * TODO extend to store any type by moving the IDs into the cache
- * TODO use a disk-backed MapDB to avoid eating memory
  */
 public class SurfaceCache {
 
-    public static final int NONE = -1;
-    public final Cache<Integer, TimeSurface> cache;
+    private final Ehcache cache;
+    private static final String CACHE_NAME = "time-surface";
+    private static final Logger LOG = LoggerFactory.getLogger(SurfaceCache.class);
 
-    public SurfaceCache (int capacity) {
-        this.cache = CacheBuilder.newBuilder()
-        	       		.maximumSize(100)
-        	       		.build();
+    private static final int MAX_CACHE_MEMORY_GB = 6;
+    private static final int MAX_CACHE_LOCAL_DISK_GB = 20;
+
+    public SurfaceCache(File cacheDirectory) {
+
+        String diskCacheDir = null;
+
+        if (cacheDirectory != null) {
+            String surfaceCacheDirectory = cacheDirectory.getAbsolutePath() + "/" + CACHE_NAME;
+            File directory = new File(surfaceCacheDirectory);
+            diskCacheDir = directory.getAbsolutePath();
+            if (!directory.isDirectory()) {
+                if (!directory.mkdirs()) {
+                    LOG.error("Failed to create cache directory for TimeSurfaces");
+                    diskCacheDir = null;
+                }
+            }
+        }
+
+        Configuration cacheManagerConfig = new Configuration();
+
+        cacheManagerConfig.sizeOfPolicy(new SizeOfPolicyConfiguration().maxDepth(900000000)
+                .maxDepthExceededBehavior(SizeOfPolicyConfiguration.MaxDepthExceededBehavior.CONTINUE));
+
+        CacheConfiguration cacheConfig = new CacheConfiguration()
+                .name(CACHE_NAME)
+                .maxBytesLocalHeap(MAX_CACHE_MEMORY_GB, MemoryUnit.GIGABYTES);
+
+        if (diskCacheDir != null) {
+            // cache to disk
+            cacheManagerConfig.diskStore(new DiskStoreConfiguration().path(diskCacheDir));
+            cacheConfig.persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.LOCALTEMPSWAP));
+            cacheConfig.maxBytesLocalDisk(MAX_CACHE_LOCAL_DISK_GB, MemoryUnit.GIGABYTES);
+        } else {
+            // keep cache in-memory
+            cacheConfig.persistence(new PersistenceConfiguration().strategy(PersistenceConfiguration.Strategy.NONE));
+        }
+
+        cacheManagerConfig.addCache(cacheConfig);
+        CacheManager cacheManager = new CacheManager(cacheManagerConfig);
+        cache = cacheManager.getEhcache(CACHE_NAME);
     }
 
     public int add(TimeSurface surface) {
-    	this.cache.put(surface.id, surface);
+    	this.cache.put(new Element(surface.id, surface));
     	return surface.id;
     }
 
-    public TimeSurface get(int id) {
-        return this.cache.getIfPresent(id);
+    public TimeSurface get(Object id) {
+        Element found = this.cache.get(id);
+        if (found != null) {
+            return (TimeSurface)found.getObjectValue();
+        }
+        return null;
+    }
+
+    public List<TimeSurfaceShort> list() {
+        List keys = this.cache.getKeys();
+        List<TimeSurfaceShort> out = Lists.newArrayList();
+        for (Object key : keys) {
+            TimeSurface surface = this.get(key);
+            out.add(new TimeSurfaceShort(surface));
+        }
+        return out;
     }
 
 }

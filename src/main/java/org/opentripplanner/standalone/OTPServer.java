@@ -44,7 +44,7 @@ public class OTPServer {
 
         // Optional Analyst Modules.
         if (params.analyst) {
-            surfaceCache = new SurfaceCache(30);
+            surfaceCache = new SurfaceCache(params.cacheDirectory);
             pointSetCache = new DiskBackedPointSetCache(100, params.pointSetDirectory);
         }
 
