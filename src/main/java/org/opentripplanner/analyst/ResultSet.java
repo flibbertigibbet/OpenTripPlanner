@@ -57,13 +57,8 @@ public class ResultSet implements Serializable{
     public ResultSet() {
     }
 
-    /** Build a new ResultSet by evaluating the given TimeSurface at all the given sample points, not including times. */
-    public ResultSet(SampleSet samples, TimeSurface surface){
-        this(samples, surface, false);
-    }
-    
     /** Build a new ResultSet by evaluating the given TimeSurface at all the given sample points, optionally including times. */
-    public ResultSet(SampleSet samples, TimeSurface surface, boolean includeIsochrones){
+    public ResultSet(SampleSet samples, TimeSurface surface, boolean includeHistograms, boolean includeIsochrones){
         id = samples.pset.id + "_" + surface.id;
 
         PointSet targets = samples.pset;
@@ -72,7 +67,8 @@ public class ResultSet implements Serializable{
 
         this.cutoffMinutes = surface.cutoffMinutes;
 
-        buildHistograms(times, targets);
+        if (includeHistograms)
+            buildHistograms(times, targets);
 
         this.times = times;
         
@@ -201,17 +197,21 @@ public class ResultSet implements Serializable{
                     jgen.writeEndObject();
                 }
 
-                jgen.writeObjectFieldStart("data"); {
-                    for(String propertyId : histograms.keySet()) {
+                if (histograms != null) {
+                    jgen.writeObjectFieldStart("data");
+                    {
+                        for (String propertyId : histograms.keySet()) {
 
-                        jgen.writeObjectFieldStart(propertyId); {
-                            histograms.get(propertyId).writeJson(jgen);
+                            jgen.writeObjectFieldStart(propertyId);
+                            {
+                                histograms.get(propertyId).writeJson(jgen);
+                            }
+                            jgen.writeEndObject();
+
                         }
-                        jgen.writeEndObject();
-
                     }
+                    jgen.writeEndObject();
                 }
-                jgen.writeEndObject();
             }
             jgen.writeEndObject();
 
