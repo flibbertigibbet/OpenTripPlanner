@@ -408,11 +408,11 @@ public class PointSet implements Serializable {
         int index = 0;
         try {
             JsonParser jp = f.createParser(is);
-            JsonToken current = jp.nextToken();
+            jp.nextToken();
             // Iterate over the key:value pairs in the top-level JSON object
             while (jp.nextToken() != JsonToken.END_OBJECT) {
                 String key = jp.getCurrentName();
-                current = jp.nextToken();
+                jp.nextToken();
                 if (key.equals("properties")) {
                     JsonNode properties = jp.readValueAsTree();
 

@@ -117,7 +117,8 @@ public class SurfaceResource extends RoutingResource {
     public Response getIndicator (@PathParam("surfaceId") Integer surfaceId,
                                   @QueryParam("targets")  String  targetPointSetId,
                                   @QueryParam("origins")  String  originPointSetId,
-                                  @QueryParam("detail")   boolean detail) {
+                                  @QueryParam("includeHistograms")   boolean histograms,
+                                  @QueryParam("includeIsochrones")   boolean isochrones) {
 
         final TimeSurface surf = otpServer.surfaceCache.get(surfaceId);
         if (surf == null) return badRequest("Invalid TimeSurface ID.");
@@ -125,14 +126,9 @@ public class SurfaceResource extends RoutingResource {
         if (pset == null) return badRequest("Missing or invalid target PointSet ID.");
 
         Router router = otpServer.getRouter(surf.routerId);
-
         SampleSet samples = pset.getOrCreateSampleSet(router.graph);
-
-        final ResultSet indicator = new ResultSet(samples, surf, detail);
-        if (indicator == null) return badServer("Could not compute indicator as requested.");
-
+        final ResultSet indicator = new ResultSet(samples, surf, histograms, isochrones);
         return Response.ok().entity((StreamingOutput) output -> indicator.writeJson(output, pset)).build();
-
     }
 
     /** Create vector isochrones for a surface. */
