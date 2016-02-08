@@ -145,7 +145,8 @@ public class Histogram implements Serializable {
                 int totalSum = 0;
                 minute = 0;
                 for (int i = 0; i < seconds; i++) {
-                    totalSum += values[i];
+                    if (values[i] > 0)
+                        totalSum += values[i]; // ignore negative values
                     if (i % 60 == 59) {
                         sums[minute] = totalSum;
                         if (counts[minute] > 0) {
