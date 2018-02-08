@@ -376,6 +376,13 @@ public class StreetEdge extends Edge implements Cloneable {
                 // for the walkspeed set by the user
                 double elevationUtilsSpeed = 4.0 / 3.0;
                 weight = costs * (elevationUtilsSpeed / speed);
+
+                // prefer greenways in walk mode
+                if (bicycleSafetyFactor <= GREENWAY_SAFETY_FACTOR) {
+                    // greenways are treated as even safer than they really are
+                    weight *= 0.66;
+                }
+
                 time = weight; //treat cost as time, as in the current model it actually is the same (this can be checked for maxSlope == 0)
                 /*
                 // debug code
